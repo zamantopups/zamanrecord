@@ -445,4 +445,187 @@
             });
 
 
-            transactionForm.addEventListener('submit', (e) =>
+            transactionForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const type = document.getElementById('transaction-type-select').value;
+                const account = document.getElementById('account-select').value;
+                const amount = parseInt(document.getElementById('amount-input').value);
+
+                if (!amount) {
+                    displayMessage('Please enter an amount.', 'error', transactionMessageBox);
+                    return;
+                }
+                
+                let profitAmount = 0;
+                let accountChange = 0;
+                let cashInHandChange = 0;
+
+                // Profit applies only to these accounts
+                const profitAccounts = ['Faysal Bank', 'EasyPaisa', 'JazzCash'];
+                const isProfitAccount = profitAccounts.includes(account);
+                
+                if (type === 'cash-in') {
+                    // Money goes from the bank to Cash in Hand
+                    accountChange = -amount;
+                    cashInHandChange = amount;
+                    if (isProfitAccount) {
+                        profitAmount = amount * 0.01; // 1% profit
+                    }
+                } else if (type === 'cash-out') {
+                    // Money goes from Cash in Hand to the bank
+                    accountChange = amount;
+                    cashInHandChange = -amount;
+                    if (isProfitAccount) {
+                        profitAmount = amount * 0.02; // 2% profit
+                    }
+                }
+
+                // Update balances
+                updateBalance(account, accountChange);
+                updateBalance('Cash in Hand', cashInHandChange);
+                updateBalance('Profit', profitAmount);
+
+                const newTransaction = {
+                    type,
+                    account,
+                    amount: amount,
+                    profit: profitAmount,
+                    timestamp: new Date().toISOString()
+                };
+
+                transactions.push(newTransaction);
+                renderTransactions();
+                displayMessage('Transaction recorded successfully!', 'success', transactionMessageBox);
+                saveData();
+                transactionForm.reset();
+            });
+
+            expenseForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const amount = document.getElementById('expense-amount-input').value;
+                const reason = document.getElementById('expense-reason-input').value.trim();
+
+                if (amount === '' || reason === '') {
+                    displayMessage('Please fill out all fields.', 'error', expenseMessageBox);
+                    return;
+                }
+
+                const parsedAmount = parseInt(amount);
+                
+                // Deduct expense from Cash in Hand
+                updateBalance('Cash in Hand', -parsedAmount);
+
+                const newExpense = {
+                    amount: parsedAmount,
+                    reason,
+                    timestamp: new Date().toISOString()
+                };
+
+                expenses.push(newExpense);
+                renderExpenses();
+                displayMessage('Expense recorded successfully!', 'success', expenseMessageBox);
+                saveData();
+                expenseForm.reset();
+            });
+
+            transactionsList.addEventListener('click', (e) => {
+                if (e.target.closest('.delete-btn')) {
+                    const btn = e.target.closest('.delete-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedTransaction = transactions[index];
+                    
+                    // Reverse the balance changes for the transaction
+                    let accountChange = 0;
+                    let cashInHandChange = 0;
+                    
+                    if (deletedTransaction.type === 'add-money') {
+                        // Reverse a simple addition
+                        updateBalance(deletedTransaction.account, -deletedTransaction.amount);
+                    } else if (deletedTransaction.type === 'cash-in') {
+                        // Reverse a transfer from bank to cash in hand
+                        accountChange = deletedTransaction.amount;
+                        cashInHandChange = -deletedTransaction.amount;
+                        updateBalance(deletedTransaction.account, accountChange);
+                        updateBalance('Cash in Hand', cashInHandChange);
+                    } else if (deletedTransaction.type === 'cash-out') {
+                        // Reverse a transfer from cash in hand to bank
+                        accountChange = -deletedTransaction.amount;
+                        cashInHandChange = deletedTransaction.amount;
+                        updateBalance(deletedTransaction.account, accountChange);
+                        updateBalance('Cash in Hand', cashInHandChange);
+                    }
+                    
+                    // Reverse the profit change for any transaction type
+                    if (deletedTransaction.profit > 0) {
+                        updateBalance('Profit', -deletedTransaction.profit);
+                    }
+                    
+                    transactions.splice(index, 1);
+                    renderTransactions();
+                    displayMessage('Transaction deleted.', 'success', transactionMessageBox);
+                    saveData();
+                }
+            });
+
+            expensesList.addEventListener('click', (e) => {
+                if (e.target.closest('.delete-expense-btn')) {
+                    const btn = e.target.closest('.delete-expense-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedExpense = expenses[index];
+                    
+                    // Reverse the expense change by adding it back to Cash in Hand
+                    updateBalance('Cash in Hand', deletedExpense.amount);
+                    
+                    expenses.splice(index, 1);
+                    renderExpenses();
+                    displayMessage('Expense deleted.', 'success', expenseMessageBox);
+                    saveData();
+                }
+            });
+
+            clearTransactionsBtn.addEventListener('click', () => {
+                if (window.confirm('This will permanently delete ALL transaction records (Cash-in, Cash-out, Add Money) and reset ALL account balances and profit to zero. Are you sure?')) {
+                    transactions = [];
+                    // Reset all balances related to transactions
+                    balances = {
+                        'Faysal Bank': 0,
+                        'EasyPaisa': 0,
+                        'JazzCash': 0,
+                        'Cash in Hand': 0,
+                        'Profit': 0
+                    };
+                    
+                    renderBalances();
+                    renderTransactions();
+                    saveData();
+                    displayMessage('All transaction records have been cleared.', 'success', resetMessageBox);
+                }
+            });
+
+            clearExpensesBtn.addEventListener('click', () => {
+                if (window.confirm('This will permanently delete ALL expense records. The "Cash in Hand" balance will also be reset to zero to reflect the change. Are you sure?')) {
+                    expenses = [];
+                    // Reset cash in hand balance as it's the only one directly affected by expenses
+                    balances['Cash in Hand'] = 0;
+                    
+                    renderBalances();
+                    renderExpenses();
+                    saveData();
+                    displayMessage('All expense records have been cleared.', 'success', resetMessageBox);
+                }
+            });
+            
+            loadData();
+            if (localStorage.getItem(DATA_KEY)) {
+                loginSection.classList.add('hidden');
+                appContent.classList.remove('hidden');
+                renderBalances();
+                renderTransactions();
+                renderExpenses();
+            }
+        });
+    </script>
+</body>
+</html>
