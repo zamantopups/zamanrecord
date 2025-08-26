@@ -171,9 +171,14 @@
 
                 <section class="bg-white p-6 rounded-xl shadow-md mt-6">
                     <h2 class="text-lg font-semibold mb-4 text-center text-red-700">Danger Zone</h2>
-                    <button id="reset-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        Reset All Records
-                    </button>
+                    <div class="space-y-4">
+                        <button id="clear-transactions-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Clear All Transactions
+                        </button>
+                        <button id="clear-expenses-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Clear All Expenses
+                        </button>
+                    </div>
                 </section>
                 <div id="reset-message-box" class="message-box p-4 rounded-md text-sm mt-4"></div>
             </div>
@@ -198,7 +203,8 @@
             const expensesList = document.getElementById('expenses-list');
             const expenseMessageBox = document.getElementById('expense-message-box');
 
-            const resetBtn = document.getElementById('reset-btn');
+            const clearTransactionsBtn = document.getElementById('clear-transactions-btn');
+            const clearExpensesBtn = document.getElementById('clear-expenses-btn');
             const resetMessageBox = document.getElementById('reset-message-box');
             
             const balanceContainer = document.getElementById('balance-container');
@@ -439,179 +445,4 @@
             });
 
 
-            transactionForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const type = document.getElementById('transaction-type-select').value;
-                const account = document.getElementById('account-select').value;
-                const amount = parseInt(document.getElementById('amount-input').value);
-
-                if (!amount) {
-                    displayMessage('Please enter an amount.', 'error', transactionMessageBox);
-                    return;
-                }
-                
-                let profitAmount = 0;
-                let accountChange = 0;
-                let cashInHandChange = 0;
-
-                // Profit applies only to these accounts
-                const profitAccounts = ['Faysal Bank', 'EasyPaisa', 'JazzCash'];
-                const isProfitAccount = profitAccounts.includes(account);
-                
-                if (type === 'cash-in') {
-                    // Money goes from the bank to Cash in Hand
-                    accountChange = -amount;
-                    cashInHandChange = amount;
-                    if (isProfitAccount) {
-                        profitAmount = amount * 0.01; // 1% profit
-                    }
-                } else if (type === 'cash-out') {
-                    // Money goes from Cash in Hand to the bank
-                    accountChange = amount;
-                    cashInHandChange = -amount;
-                    if (isProfitAccount) {
-                        profitAmount = amount * 0.02; // 2% profit
-                    }
-                }
-
-                // Update balances
-                updateBalance(account, accountChange);
-                updateBalance('Cash in Hand', cashInHandChange);
-                updateBalance('Profit', profitAmount);
-
-                const newTransaction = {
-                    type,
-                    account,
-                    amount: amount,
-                    profit: profitAmount,
-                    timestamp: new Date().toISOString()
-                };
-
-                transactions.push(newTransaction);
-                renderTransactions();
-                displayMessage('Transaction recorded successfully!', 'success', transactionMessageBox);
-                saveData();
-                transactionForm.reset();
-            });
-
-            expenseForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const amount = document.getElementById('expense-amount-input').value;
-                const reason = document.getElementById('expense-reason-input').value.trim();
-
-                if (amount === '' || reason === '') {
-                    displayMessage('Please fill out all fields.', 'error', expenseMessageBox);
-                    return;
-                }
-
-                const parsedAmount = parseInt(amount);
-                
-                // Deduct expense from Cash in Hand
-                updateBalance('Cash in Hand', -parsedAmount);
-
-                const newExpense = {
-                    amount: parsedAmount,
-                    reason,
-                    timestamp: new Date().toISOString()
-                };
-
-                expenses.push(newExpense);
-                renderExpenses();
-                displayMessage('Expense recorded successfully!', 'success', expenseMessageBox);
-                saveData();
-                expenseForm.reset();
-            });
-
-            transactionsList.addEventListener('click', (e) => {
-                if (e.target.closest('.delete-btn')) {
-                    const btn = e.target.closest('.delete-btn');
-                    const index = parseInt(btn.dataset.index);
-                    const deletedTransaction = transactions[index];
-                    
-                    // Reverse the balance changes for the transaction
-                    let accountChange = 0;
-                    let cashInHandChange = 0;
-                    
-                    if (deletedTransaction.type === 'add-money') {
-                        // Reverse a simple addition
-                        updateBalance(deletedTransaction.account, -deletedTransaction.amount);
-                    } else if (deletedTransaction.type === 'cash-in') {
-                        // Reverse a transfer from bank to cash in hand
-                        accountChange = deletedTransaction.amount;
-                        cashInHandChange = -deletedTransaction.amount;
-                        updateBalance(deletedTransaction.account, accountChange);
-                        updateBalance('Cash in Hand', cashInHandChange);
-                    } else if (deletedTransaction.type === 'cash-out') {
-                        // Reverse a transfer from cash in hand to bank
-                        accountChange = -deletedTransaction.amount;
-                        cashInHandChange = deletedTransaction.amount;
-                        updateBalance(deletedTransaction.account, accountChange);
-                        updateBalance('Cash in Hand', cashInHandChange);
-                    }
-                    
-                    // Reverse the profit change for any transaction type
-                    if (deletedTransaction.profit > 0) {
-                        updateBalance('Profit', -deletedTransaction.profit);
-                    }
-                    
-                    transactions.splice(index, 1);
-                    renderTransactions();
-                    displayMessage('Transaction deleted.', 'success', transactionMessageBox);
-                    saveData();
-                }
-            });
-
-            expensesList.addEventListener('click', (e) => {
-                if (e.target.closest('.delete-expense-btn')) {
-                    const btn = e.target.closest('.delete-expense-btn');
-                    const index = parseInt(btn.dataset.index);
-                    const deletedExpense = expenses[index];
-                    
-                    // Reverse the expense change by adding it back to Cash in Hand
-                    updateBalance('Cash in Hand', deletedExpense.amount);
-                    
-                    expenses.splice(index, 1);
-                    renderExpenses();
-                    displayMessage('Expense deleted.', 'success', expenseMessageBox);
-                    saveData();
-                }
-            });
-
-            resetBtn.addEventListener('click', () => {
-                if (window.confirm('Are you sure you want to reset all records? This action cannot be undone.')) {
-                    // Reset all data arrays and objects to their initial state
-                    transactions = [];
-                    expenses = [];
-                    balances = {
-                        'Faysal Bank': 0,
-                        'EasyPaisa': 0,
-                        'JazzCash': 0,
-                        'Cash in Hand': 0,
-                        'Profit': 0
-                    };
-                    
-                    // Update the UI
-                    renderBalances();
-                    renderTransactions();
-                    renderExpenses();
-                    
-                    // Save the reset state
-                    saveData();
-                    displayMessage('All records have been successfully reset.', 'success', resetMessageBox);
-                }
-            });
-            
-            loadData();
-            if (localStorage.getItem(DATA_KEY)) {
-                loginSection.classList.add('hidden');
-                appContent.classList.remove('hidden');
-                renderBalances();
-                renderTransactions();
-                renderExpenses();
-            }
-        });
-    </script>
-</body>
-</html>
+            transactionForm.addEventListener('submit', (e) =>
