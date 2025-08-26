@@ -62,6 +62,30 @@
                     <div id="balance-container" class="grid grid-cols-2 gap-4 mt-4">
                         </div>
                 </section>
+                
+                <section id="add-money-section" class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-lg font-semibold mb-4 text-center text-blue-900">Add Money</h2>
+                    <form id="add-money-form" class="space-y-4">
+                        <div>
+                            <label for="add-money-amount-input" class="block text-sm font-medium text-gray-700">Amount</label>
+                            <input type="number" id="add-money-amount-input" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" placeholder="e.g., 5000">
+                        </div>
+                        <div>
+                            <label for="add-money-account-select" class="block text-sm font-medium text-gray-700">Account</label>
+                            <select id="add-money-account-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md">
+                                <option value="Faysal Bank">Faysal Bank</option>
+                                <option value="EasyPaisa">EasyPaisa</option>
+                                <option value="JazzCash">JazzCash</option>
+                                <option value="Cash in Hand">Cash in Hand</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Add Money
+                        </button>
+                    </form>
+                </section>
+                <div id="add-money-message-box" class="message-box p-4 rounded-md text-sm mb-4"></div>
+
 
                 <section class="bg-white p-6 rounded-xl shadow-md mb-6">
                     <h2 class="text-lg font-semibold mb-4 text-center text-blue-900">New Transaction</h2>
@@ -155,6 +179,9 @@
             const appContent = document.getElementById('app-content');
             const loginMessageBox = document.getElementById('login-message-box');
             
+            const addMoneyForm = document.getElementById('add-money-form');
+            const addMoneyMessageBox = document.getElementById('add-money-message-box');
+            
             const transactionForm = document.getElementById('transaction-form');
             const transactionsList = document.getElementById('transactions-list');
             const transactionMessageBox = document.getElementById('transaction-message-box');
@@ -198,6 +225,10 @@
                     correctPassword = parsedData.password;
                     transactions = parsedData.transactions;
                     expenses = parsedData.expenses;
+                    // Check if 'Profit' key exists, if not, initialize to 0
+                    if (!parsedData.balances.hasOwnProperty('Profit')) {
+                        parsedData.balances.Profit = 0;
+                    }
                     balances = parsedData.balances;
                 }
             }
@@ -225,11 +256,7 @@
                     balanceAmountEl.className = 'balance-amount';
                     balanceAmountEl.textContent = `Rs. ${balances[account].toLocaleString()}`;
                     
-                    if (account === 'Profit') {
-                        balanceAmountEl.style.color = '#fff';
-                    } else {
-                        balanceAmountEl.style.color = '#fff';
-                    }
+                    balanceAmountEl.style.color = '#fff';
 
                     balanceEl.appendChild(accountNameEl);
                     balanceEl.appendChild(balanceAmountEl);
@@ -260,19 +287,32 @@
                         const transactionElement = document.createElement('div');
                         transactionElement.className = 'bg-gray-50 p-4 rounded-lg flex justify-between items-center shadow-sm';
                         
-                        const amountColor = transaction.type === 'cash-in' ? 'text-green-600' : 'text-red-600';
-                        const amountSign = transaction.type === 'cash-in' ? '+' : '-';
+                        let amountColor, amountSign, transactionLabel;
+
+                        if (transaction.type === 'add-money') {
+                            amountColor = 'text-green-600';
+                            amountSign = '+';
+                            transactionLabel = `Added to ${transaction.account}`;
+                        } else if (transaction.type === 'cash-in') {
+                            amountColor = 'text-green-600';
+                            amountSign = '+';
+                            transactionLabel = `From ${transaction.account} to Cash in Hand`;
+                        } else if (transaction.type === 'cash-out') {
+                            amountColor = 'text-red-600';
+                            amountSign = '-';
+                            transactionLabel = `From Cash in Hand to ${transaction.account}`;
+                        }
+                        
                         const profitDisplay = transaction.profit ? `<span class="text-xs text-gray-500"> (Profit: Rs. ${transaction.profit.toLocaleString()})</span>` : '';
                         
                         const detailsHtml = `
                             <div>
-                                <h3 class="font-bold text-gray-900">${transaction.account}</h3>
-                                <p class="text-sm text-gray-600">${transaction.type}</p>
+                                <h3 class="font-bold text-gray-900">${transactionLabel}</h3>
+                                <p class="text-sm text-gray-600">${new Date(transaction.timestamp).toLocaleString()}</p>
                             </div>
                             <div class="text-right flex items-center space-x-2">
                                 <span class="font-bold ${amountColor}">Rs. ${amountSign}${transaction.amount.toLocaleString()}</span>
                                 ${profitDisplay}
-                                <p class="text-xs text-gray-500">${new Date(transaction.timestamp).toLocaleString()}</p>
                                 <button class="delete-btn text-red-500 hover:text-red-700 transition" data-index="${index}">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
@@ -303,6 +343,7 @@
                                 <p class="text-xs text-gray-500">${new Date(expense.timestamp).toLocaleString()}</p>
                                 <button class="delete-expense-btn text-red-500 hover:text-red-700 transition" data-index="${index}">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                
                                 </button>
                             </div>
                         `;
@@ -357,38 +398,81 @@
                 changePasswordForm.reset();
             });
 
+            addMoneyForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const account = document.getElementById('add-money-account-select').value;
+                const amount = parseInt(document.getElementById('add-money-amount-input').value);
+
+                if (!amount) {
+                    displayMessage('Please enter an amount.', 'error', addMoneyMessageBox);
+                    return;
+                }
+
+                // Add money directly to the selected account
+                updateBalance(account, amount);
+                
+                const newTransaction = {
+                    type: 'add-money',
+                    account,
+                    amount: amount,
+                    profit: 0,
+                    timestamp: new Date().toISOString()
+                };
+
+                transactions.push(newTransaction);
+                renderTransactions();
+                displayMessage('Money added successfully!', 'success', addMoneyMessageBox);
+                saveData();
+                addMoneyForm.reset();
+            });
+
+
             transactionForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 
                 const type = document.getElementById('transaction-type-select').value;
                 const account = document.getElementById('account-select').value;
-                const amount = document.getElementById('amount-input').value;
+                const amount = parseInt(document.getElementById('amount-input').value);
 
-                if (amount === '') {
+                if (!amount) {
                     displayMessage('Please enter an amount.', 'error', transactionMessageBox);
                     return;
                 }
-
-                const parsedAmount = parseInt(amount);
-                let sign = type === 'cash-in' ? 1 : -1;
                 
                 let profitAmount = 0;
-                // Calculate profit only for Faysal Bank, EasyPaisa, or JazzCash
-                if (account !== 'Cash in Hand') {
-                    if (type === 'cash-in') {
-                        profitAmount = parsedAmount * 0.01; // 1% profit
-                    } else if (type === 'cash-out') {
-                        profitAmount = parsedAmount * 0.02; // 2% profit
+                let accountChange = 0;
+                let cashInHandChange = 0;
+
+                // Profit applies only to these accounts
+                const profitAccounts = ['Faysal Bank', 'EasyPaisa', 'JazzCash'];
+                const isProfitAccount = profitAccounts.includes(account);
+                
+                if (type === 'cash-in') {
+                    // Money goes from the bank to Cash in Hand
+                    accountChange = -amount;
+                    cashInHandChange = amount;
+                    if (isProfitAccount) {
+                        profitAmount = amount * 0.01; // 1% profit
                     }
-                    updateBalance('Profit', profitAmount);
+                } else if (type === 'cash-out') {
+                    // Money goes from Cash in Hand to the bank
+                    accountChange = amount;
+                    cashInHandChange = -amount;
+                    if (isProfitAccount) {
+                        profitAmount = amount * 0.02; // 2% profit
+                    }
                 }
 
-                updateBalance(account, sign * parsedAmount);
+                // Update balances
+                updateBalance(account, accountChange);
+                updateBalance('Cash in Hand', cashInHandChange);
+                updateBalance('Profit', profitAmount);
 
                 const newTransaction = {
                     type,
                     account,
-                    amount: parsedAmount,
+                    amount: amount,
                     profit: profitAmount,
                     timestamp: new Date().toISOString()
                 };
@@ -435,11 +519,28 @@
                     const index = parseInt(btn.dataset.index);
                     const deletedTransaction = transactions[index];
                     
-                    // Reverse the balance change
-                    let sign = deletedTransaction.type === 'cash-in' ? -1 : 1;
-                    updateBalance(deletedTransaction.account, sign * deletedTransaction.amount);
+                    // Reverse the balance changes for the transaction
+                    let accountChange = 0;
+                    let cashInHandChange = 0;
                     
-                    // Reverse the profit change
+                    if (deletedTransaction.type === 'add-money') {
+                        // Reverse a simple addition
+                        updateBalance(deletedTransaction.account, -deletedTransaction.amount);
+                    } else if (deletedTransaction.type === 'cash-in') {
+                        // Reverse a transfer from bank to cash in hand
+                        accountChange = deletedTransaction.amount;
+                        cashInHandChange = -deletedTransaction.amount;
+                        updateBalance(deletedTransaction.account, accountChange);
+                        updateBalance('Cash in Hand', cashInHandChange);
+                    } else if (deletedTransaction.type === 'cash-out') {
+                        // Reverse a transfer from cash in hand to bank
+                        accountChange = -deletedTransaction.amount;
+                        cashInHandChange = deletedTransaction.amount;
+                        updateBalance(deletedTransaction.account, accountChange);
+                        updateBalance('Cash in Hand', cashInHandChange);
+                    }
+                    
+                    // Reverse the profit change for any transaction type
                     if (deletedTransaction.profit > 0) {
                         updateBalance('Profit', -deletedTransaction.profit);
                     }
