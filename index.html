@@ -147,7 +147,7 @@
                     </div>
                 </section>
                 
-                <section id="change-password-section" class="bg-white p-6 rounded-xl shadow-md">
+                <section id="change-password-section" class="bg-white p-6 rounded-xl shadow-md mb-6">
                     <h2 class="text-lg font-semibold mb-4 text-center text-blue-900">Change Password</h2>
                     <form id="change-password-form" class="space-y-4">
                         <div>
@@ -168,6 +168,14 @@
                     </form>
                 </section>
                 <div id="change-password-message-box" class="message-box p-4 rounded-md text-sm mt-4"></div>
+
+                <section class="bg-white p-6 rounded-xl shadow-md mt-6">
+                    <h2 class="text-lg font-semibold mb-4 text-center text-red-700">Danger Zone</h2>
+                    <button id="reset-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        Reset All Records
+                    </button>
+                </section>
+                <div id="reset-message-box" class="message-box p-4 rounded-md text-sm mt-4"></div>
             </div>
         </main>
     </div>
@@ -189,6 +197,9 @@
             const expenseForm = document.getElementById('expense-form');
             const expensesList = document.getElementById('expenses-list');
             const expenseMessageBox = document.getElementById('expense-message-box');
+
+            const resetBtn = document.getElementById('reset-btn');
+            const resetMessageBox = document.getElementById('reset-message-box');
             
             const balanceContainer = document.getElementById('balance-container');
             const changePasswordForm = document.getElementById('change-password-form');
@@ -241,6 +252,20 @@
                 saveData();
             }
 
+            function displayMessage(message, type, messageBoxElement) {
+                messageBoxElement.textContent = message;
+                messageBoxElement.classList.remove('message-box', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+                messageBoxElement.classList.add('show');
+                if (type === 'success') {
+                    messageBoxElement.classList.add('bg-green-100', 'text-green-700');
+                } else if (type === 'error') {
+                    messageBoxElement.classList.add('bg-red-100', 'text-red-700');
+                }
+                setTimeout(() => {
+                    messageBoxElement.classList.remove('show');
+                }, 3000);
+            }
+
             function renderBalances() {
                 balanceContainer.innerHTML = '';
                 const accounts = Object.keys(balances);
@@ -264,20 +289,6 @@
                 });
             }
 
-            function displayMessage(message, type, messageBoxElement) {
-                messageBoxElement.textContent = message;
-                messageBoxElement.classList.remove('message-box', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
-                messageBoxElement.classList.add('show');
-                if (type === 'success') {
-                    messageBoxElement.classList.add('bg-green-100', 'text-green-700');
-                } else if (type === 'error') {
-                    messageBoxElement.classList.add('bg-red-100', 'text-red-700');
-                }
-                setTimeout(() => {
-                    messageBoxElement.classList.remove('show');
-                }, 3000);
-            }
-
             function renderTransactions() {
                 transactionsList.innerHTML = '';
                 if (transactions.length === 0) {
@@ -299,284 +310,4 @@
                             transactionLabel = `From ${transaction.account} to Cash in Hand`;
                         } else if (transaction.type === 'cash-out') {
                             amountColor = 'text-red-600';
-                            amountSign = '-';
-                            transactionLabel = `From Cash in Hand to ${transaction.account}`;
-                        }
-                        
-                        const profitDisplay = transaction.profit ? `<span class="text-xs text-gray-500"> (Profit: Rs. ${transaction.profit.toLocaleString()})</span>` : '';
-                        
-                        const detailsHtml = `
-                            <div>
-                                <h3 class="font-bold text-gray-900">${transactionLabel}</h3>
-                                <p class="text-sm text-gray-600">${new Date(transaction.timestamp).toLocaleString()}</p>
-                            </div>
-                            <div class="text-right flex items-center space-x-2">
-                                <span class="font-bold ${amountColor}">Rs. ${amountSign}${transaction.amount.toLocaleString()}</span>
-                                ${profitDisplay}
-                                <button class="delete-btn text-red-500 hover:text-red-700 transition" data-index="${index}">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                            </div>
-                        `;
-                        transactionElement.innerHTML = detailsHtml;
-                        transactionsList.prepend(transactionElement);
-                    });
-                }
-            }
-
-            function renderExpenses() {
-                expensesList.innerHTML = '';
-                if (expenses.length === 0) {
-                    expensesList.innerHTML = '<p class="text-center text-gray-500">No expenses recorded yet.</p>';
-                } else {
-                    expenses.forEach((expense, index) => {
-                        const expenseElement = document.createElement('div');
-                        expenseElement.className = 'bg-gray-50 p-4 rounded-lg flex justify-between items-center shadow-sm';
-                        
-                        const detailsHtml = `
-                            <div>
-                                <h3 class="font-bold text-gray-900">${expense.reason}</h3>
-                                <p class="text-sm text-gray-600">From Cash in Hand</p>
-                            </div>
-                            <div class="text-right flex items-center space-x-2">
-                                <span class="font-bold text-red-600">Rs. -${expense.amount.toLocaleString()}</span>
-                                <p class="text-xs text-gray-500">${new Date(expense.timestamp).toLocaleString()}</p>
-                                <button class="delete-expense-btn text-red-500 hover:text-red-700 transition" data-index="${index}">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                
-                                </button>
-                            </div>
-                        `;
-                        expenseElement.innerHTML = detailsHtml;
-                        expensesList.prepend(expenseElement);
-                    });
-                }
-            }
-
-
-            // Event Listeners for Login, Transactions, Expenses, and Password Change
-            loginForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const enteredPassword = document.getElementById('password-input').value;
-                
-                if (enteredPassword === correctPassword) {
-                    loginSection.classList.add('hidden');
-                    appContent.classList.remove('hidden');
-                    renderBalances();
-                    renderTransactions();
-                    renderExpenses();
-                    saveData();
-                } else {
-                    displayMessage('Incorrect password. Please try again.', 'error', loginMessageBox);
-                }
-            });
-
-            changePasswordForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const currentPassword = document.getElementById('current-password').value;
-                const newPassword = document.getElementById('new-password').value;
-                const confirmNewPassword = document.getElementById('confirm-new-password').value;
-
-                if (currentPassword === '' || newPassword === '' || confirmNewPassword === '') {
-                    displayMessage('All fields are required.', 'error', changePasswordMessageBox);
-                    return;
-                }
-
-                if (currentPassword !== correctPassword) {
-                    displayMessage('Incorrect current password.', 'error', changePasswordMessageBox);
-                    return;
-                }
-
-                if (newPassword !== confirmNewPassword) {
-                    displayMessage('New passwords do not match.', 'error', changePasswordMessageBox);
-                    return;
-                }
-
-                correctPassword = newPassword;
-                saveData();
-                displayMessage('Password changed successfully!', 'success', changePasswordMessageBox);
-                changePasswordForm.reset();
-            });
-
-            addMoneyForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const account = document.getElementById('add-money-account-select').value;
-                const amount = parseInt(document.getElementById('add-money-amount-input').value);
-
-                if (!amount) {
-                    displayMessage('Please enter an amount.', 'error', addMoneyMessageBox);
-                    return;
-                }
-
-                // Add money directly to the selected account
-                updateBalance(account, amount);
-                
-                const newTransaction = {
-                    type: 'add-money',
-                    account,
-                    amount: amount,
-                    profit: 0,
-                    timestamp: new Date().toISOString()
-                };
-
-                transactions.push(newTransaction);
-                renderTransactions();
-                displayMessage('Money added successfully!', 'success', addMoneyMessageBox);
-                saveData();
-                addMoneyForm.reset();
-            });
-
-
-            transactionForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const type = document.getElementById('transaction-type-select').value;
-                const account = document.getElementById('account-select').value;
-                const amount = parseInt(document.getElementById('amount-input').value);
-
-                if (!amount) {
-                    displayMessage('Please enter an amount.', 'error', transactionMessageBox);
-                    return;
-                }
-                
-                let profitAmount = 0;
-                let accountChange = 0;
-                let cashInHandChange = 0;
-
-                // Profit applies only to these accounts
-                const profitAccounts = ['Faysal Bank', 'EasyPaisa', 'JazzCash'];
-                const isProfitAccount = profitAccounts.includes(account);
-                
-                if (type === 'cash-in') {
-                    // Money goes from the bank to Cash in Hand
-                    accountChange = -amount;
-                    cashInHandChange = amount;
-                    if (isProfitAccount) {
-                        profitAmount = amount * 0.01; // 1% profit
-                    }
-                } else if (type === 'cash-out') {
-                    // Money goes from Cash in Hand to the bank
-                    accountChange = amount;
-                    cashInHandChange = -amount;
-                    if (isProfitAccount) {
-                        profitAmount = amount * 0.02; // 2% profit
-                    }
-                }
-
-                // Update balances
-                updateBalance(account, accountChange);
-                updateBalance('Cash in Hand', cashInHandChange);
-                updateBalance('Profit', profitAmount);
-
-                const newTransaction = {
-                    type,
-                    account,
-                    amount: amount,
-                    profit: profitAmount,
-                    timestamp: new Date().toISOString()
-                };
-
-                transactions.push(newTransaction);
-                renderTransactions();
-                displayMessage('Transaction recorded successfully!', 'success', transactionMessageBox);
-                saveData();
-                transactionForm.reset();
-            });
-
-            expenseForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const amount = document.getElementById('expense-amount-input').value;
-                const reason = document.getElementById('expense-reason-input').value.trim();
-
-                if (amount === '' || reason === '') {
-                    displayMessage('Please fill out all fields.', 'error', expenseMessageBox);
-                    return;
-                }
-
-                const parsedAmount = parseInt(amount);
-                
-                // Deduct expense from Cash in Hand
-                updateBalance('Cash in Hand', -parsedAmount);
-
-                const newExpense = {
-                    amount: parsedAmount,
-                    reason,
-                    timestamp: new Date().toISOString()
-                };
-
-                expenses.push(newExpense);
-                renderExpenses();
-                displayMessage('Expense recorded successfully!', 'success', expenseMessageBox);
-                saveData();
-                expenseForm.reset();
-            });
-
-            transactionsList.addEventListener('click', (e) => {
-                if (e.target.closest('.delete-btn')) {
-                    const btn = e.target.closest('.delete-btn');
-                    const index = parseInt(btn.dataset.index);
-                    const deletedTransaction = transactions[index];
-                    
-                    // Reverse the balance changes for the transaction
-                    let accountChange = 0;
-                    let cashInHandChange = 0;
-                    
-                    if (deletedTransaction.type === 'add-money') {
-                        // Reverse a simple addition
-                        updateBalance(deletedTransaction.account, -deletedTransaction.amount);
-                    } else if (deletedTransaction.type === 'cash-in') {
-                        // Reverse a transfer from bank to cash in hand
-                        accountChange = deletedTransaction.amount;
-                        cashInHandChange = -deletedTransaction.amount;
-                        updateBalance(deletedTransaction.account, accountChange);
-                        updateBalance('Cash in Hand', cashInHandChange);
-                    } else if (deletedTransaction.type === 'cash-out') {
-                        // Reverse a transfer from cash in hand to bank
-                        accountChange = -deletedTransaction.amount;
-                        cashInHandChange = deletedTransaction.amount;
-                        updateBalance(deletedTransaction.account, accountChange);
-                        updateBalance('Cash in Hand', cashInHandChange);
-                    }
-                    
-                    // Reverse the profit change for any transaction type
-                    if (deletedTransaction.profit > 0) {
-                        updateBalance('Profit', -deletedTransaction.profit);
-                    }
-                    
-                    transactions.splice(index, 1);
-                    renderTransactions();
-                    displayMessage('Transaction deleted.', 'success', transactionMessageBox);
-                    saveData();
-                }
-            });
-
-            expensesList.addEventListener('click', (e) => {
-                if (e.target.closest('.delete-expense-btn')) {
-                    const btn = e.target.closest('.delete-expense-btn');
-                    const index = parseInt(btn.dataset.index);
-                    const deletedExpense = expenses[index];
-                    
-                    // Reverse the expense change by adding it back to Cash in Hand
-                    updateBalance('Cash in Hand', deletedExpense.amount);
-                    
-                    expenses.splice(index, 1);
-                    renderExpenses();
-                    displayMessage('Expense deleted.', 'success', expenseMessageBox);
-                    saveData();
-                }
-            });
-            
-            loadData();
-            if (localStorage.getItem(DATA_KEY)) {
-                loginSection.classList.add('hidden');
-                appContent.classList.remove('hidden');
-                renderBalances();
-                renderTransactions();
-                renderExpenses();
-            }
-        });
-    </script>
-</body>
-</html>
+                            amount
