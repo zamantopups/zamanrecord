@@ -263,7 +263,7 @@
             const changePasswordForm = document.getElementById('change-password-form');
             const changePasswordMessageBox = document.getElementById('change-password-message-box');
 
-            let correctPassword = 'Zaman1234567';
+            let correctPassword = 'Zaman123456';
             let transactions = [];
             let expenses = [];
             let loans = [];
@@ -293,7 +293,12 @@
                 const data = localStorage.getItem(DATA_KEY);
                 if (data) {
                     const parsedData = JSON.parse(data);
-                    correctPassword = parsedData.password;
+                    
+                    // Prioritize password from local storage, otherwise use the hardcoded one
+                    if (parsedData.password) {
+                        correctPassword = parsedData.password;
+                    }
+                    
                     transactions = parsedData.transactions || [];
                     expenses = parsedData.expenses || [];
                     loans = parsedData.loans || [];
@@ -846,4 +851,873 @@
 
                 printContent.innerHTML = `
                     <div style="padding: 2rem;">
-                        <h1 style="text-align: center; font-size
+                        <h1 style="text-align: center; font-size: 2rem; font-weight: bold; margin-bottom: 2rem;">Zaman Photcopy Cash Record</h1>
+                        ${balancesHtml}
+                        ${transactionsHtml}
+                        ${expensesHtml}
+                        ${loansHtml}
+                    </div>
+                `;
+
+                const originalBody = document.body.innerHTML;
+                document.body.innerHTML = printContent.innerHTML;
+                window.print();
+                document.body.innerHTML = originalBody;
+                
+                // Re-attach event listeners after restoring the DOM
+                document.getElementById('login-form').addEventListener('submit', handleLoginForm);
+                document.getElementById('add-money-form').addEventListener('submit', handleAddMoneyForm);
+                document.getElementById('transaction-form').addEventListener('submit', handleTransactionForm);
+                document.getElementById('expense-form').addEventListener('submit', handleExpenseForm);
+                document.getElementById('loan-form').addEventListener('submit', handleLoanForm);
+                document.getElementById('change-password-form').addEventListener('submit', handleChangePasswordForm);
+                document.getElementById('clear-transactions-btn').addEventListener('click', handleClearTransactions);
+                document.getElementById('clear-expenses-btn').addEventListener('click', handleClearExpenses);
+                document.getElementById('print-records-btn').addEventListener('click', printRecords);
+                transactionsList.addEventListener('click', handleDeleteTransaction);
+                expensesList.addEventListener('click', handleDeleteExpense);
+                loansList.addEventListener('click', handleDeleteLoan);
+            }
+
+            // Centralized handlers for event listeners
+            function handleLoginForm(e) {
+                e.preventDefault();
+                const enteredPassword = document.getElementById('password-input').value;
+                
+                if (enteredPassword === correctPassword) {
+                    loginSection.classList.add('hidden');
+                    appContent.classList.remove('hidden');
+                    renderBalances();
+                    renderTotalBalance();
+                    renderTransactions();
+                    renderExpenses();
+                    renderLoans();
+                    saveData();
+                } else {
+                    displayMessage('Incorrect password. Please try again.', 'error', loginMessageBox);
+                }
+            }
+            function handleAddMoneyForm(e) {
+                e.preventDefault();
+                const account = document.getElementById('add-money-account-select').value;
+                const amount = parseInt(document.getElementById('add-money-amount-input').value);
+                if (!amount) {
+                    displayMessage('Please enter an amount.', 'error', addMoneyMessageBox);
+                    return;
+                }
+                updateBalance(account, amount);
+                const newTransaction = { type: 'add-money', account, amount: amount, profit: 0, timestamp: new Date().toISOString() };
+                transactions.push(newTransaction);
+                renderTransactions();
+                displayMessage('Money added successfully!', 'success', addMoneyMessageBox);
+                saveData();
+                addMoneyForm.reset();
+            }
+            function handleTransactionForm(e) {
+                e.preventDefault();
+                const type = document.getElementById('transaction-type-select').value;
+                const account = document.getElementById('account-select').value;
+                const amount = parseInt(document.getElementById('amount-input').value);
+                if (!amount) {
+                    displayMessage('Please enter an amount.', 'error', transactionMessageBox);
+                    return;
+                }
+                let profitAmount = 0;
+                let accountChange = 0;
+                let cashInHandChange = 0;
+                const profitAccounts = ['Faysal Bank', 'EasyPaisa', 'JazzCash'];
+                const isProfitAccount = profitAccounts.includes(account);
+                if (type === 'cash-in') {
+                    accountChange = -amount;
+                    cashInHandChange = amount;
+                    if (isProfitAccount) { profitAmount = amount * 0.01; }
+                } else if (type === 'cash-out') {
+                    accountChange = amount;
+                    cashInHandChange = -amount;
+                    if (isProfitAccount) { profitAmount = amount * 0.02; }
+                }
+                updateBalance(account, accountChange);
+                updateBalance('Cash in Hand', cashInHandChange);
+                updateBalance('Profit', profitAmount);
+                const newTransaction = { type, account, amount: amount, profit: profitAmount, timestamp: new Date().toISOString() };
+                transactions.push(newTransaction);
+                renderTransactions();
+                displayMessage('Transaction recorded successfully!', 'success', transactionMessageBox);
+                saveData();
+                transactionForm.reset();
+            }
+            function handleExpenseForm(e) {
+                e.preventDefault();
+                const amount = document.getElementById('expense-amount-input').value;
+                const reason = document.getElementById('expense-reason-input').value.trim();
+                if (amount === '' || reason === '') {
+                    displayMessage('Please fill out all fields.', 'error', expenseMessageBox);
+                    return;
+                }
+                const parsedAmount = parseInt(amount);
+                updateBalance('Cash in Hand', -parsedAmount);
+                const newExpense = { amount: parsedAmount, reason, timestamp: new Date().toISOString() };
+                expenses.push(newExpense);
+                renderExpenses();
+                displayMessage('Expense recorded successfully!', 'success', expenseMessageBox);
+                saveData();
+                expenseForm.reset();
+            }
+            function handleLoanForm(e) {
+                e.preventDefault();
+                const action = document.getElementById('loan-action-select').value;
+                const type = document.getElementById('loan-type-select').value;
+                const amount = parseInt(document.getElementById('loan-amount-input').value);
+                const name = document.getElementById('loan-name-input').value.trim();
+                if (amount === '' || name === '') {
+                    displayMessage('Please fill out all fields.', 'error', loanMessageBox);
+                    return;
+                }
+                let amountChange = 0;
+                if (type === 'given' && action === 'new-loan') { amountChange = -amount; }
+                else if (type === 'given' && action === 'repay-loan') { amountChange = amount; }
+                else if (type === 'received' && action === 'new-loan') { amountChange = amount; }
+                else if (type === 'received' && action === 'repay-loan') { amountChange = -amount; }
+                updateBalance('Cash in Hand', amountChange);
+                const newLoan = { action, type, amount, name, timestamp: new Date().toISOString() };
+                loans.push(newLoan);
+                renderLoans();
+                displayMessage('Loan record added successfully!', 'success', loanMessageBox);
+                saveData();
+                loanForm.reset();
+            }
+            function handleChangePasswordForm(e) {
+                e.preventDefault();
+                const currentPassword = document.getElementById('current-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmNewPassword = document.getElementById('confirm-new-password').value;
+                if (currentPassword === '' || newPassword === '' || confirmNewPassword === '') {
+                    displayMessage('All fields are required.', 'error', changePasswordMessageBox);
+                    return;
+                }
+                if (currentPassword !== correctPassword) {
+                    displayMessage('Incorrect current password.', 'error', changePasswordMessageBox);
+                    return;
+                }
+                if (newPassword !== confirmNewPassword) {
+                    displayMessage('New passwords do not match.', 'error', changePasswordMessageBox);
+                    return;
+                }
+                correctPassword = newPassword;
+                saveData();
+                displayMessage('Password changed successfully!', 'success', changePasswordMessageBox);
+                changePasswordForm.reset();
+            }
+            function handleClearTransactions() {
+                if (window.confirm('This will permanently delete ALL transaction records (Cash-in, Cash-out, Add Money) and reset ALL account balances and profit to zero. Are you sure?')) {
+                    transactions = [];
+                    balances = { 'Faysal Bank': 0, 'EasyPaisa': 0, 'JazzCash': 0, 'Cash in Hand': 0, 'Profit': 0 };
+                    renderBalances();
+                    renderTotalBalance();
+                    renderTransactions();
+                    saveData();
+                    displayMessage('All transaction records have been cleared.', 'success', resetMessageBox);
+                }
+            }
+            function handleClearExpenses() {
+                if (window.confirm('This will permanently delete ALL expense records. The "Cash in Hand" balance will also be reset to zero to reflect the change. Are you sure?')) {
+                    expenses = [];
+                    balances['Cash in Hand'] = 0;
+                    renderBalances();
+                    renderTotalBalance();
+                    renderExpenses();
+                    saveData();
+                    displayMessage('All expense records have been cleared.', 'success', resetMessageBox);
+                }
+            }
+            function handleDeleteTransaction(e) {
+                if (e.target.closest('.delete-btn')) {
+                    const btn = e.target.closest('.delete-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedTransaction = transactions[index];
+                    let accountChange = 0;
+                    let cashInHandChange = 0;
+                    if (deletedTransaction.type === 'add-money') { updateBalance(deletedTransaction.account, -deletedTransaction.amount); }
+                    else if (deletedTransaction.type === 'cash-in') { accountChange = deletedTransaction.amount; cashInHandChange = -deletedTransaction.amount; updateBalance(deletedTransaction.account, accountChange); updateBalance('Cash in Hand', cashInHandChange); }
+                    else if (deletedTransaction.type === 'cash-out') { accountChange = -deletedTransaction.amount; cashInHandChange = deletedTransaction.amount; updateBalance(deletedTransaction.account, accountChange); updateBalance('Cash in Hand', cashInHandChange); }
+                    if (deletedTransaction.profit > 0) { updateBalance('Profit', -deletedTransaction.profit); }
+                    transactions.splice(index, 1);
+                    renderTransactions();
+                    displayMessage('Transaction deleted.', 'success', transactionMessageBox);
+                    saveData();
+                }
+            }
+            function handleDeleteExpense(e) {
+                if (e.target.closest('.delete-expense-btn')) {
+                    const btn = e.target.closest('.delete-expense-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedExpense = expenses[index];
+                    updateBalance('Cash in Hand', deletedExpense.amount);
+                    expenses.splice(index, 1);
+                    renderExpenses();
+                    displayMessage('Expense deleted.', 'success', expenseMessageBox);
+                    saveData();
+                }
+            }
+            function handleDeleteLoan(e) {
+                if (e.target.closest('.delete-loan-btn')) {
+                    const btn = e.target.closest('.delete-loan-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedLoan = loans[index];
+                    let amountChange = 0;
+                    if (deletedLoan.type === 'given' && deletedLoan.action === 'new-loan') { amountChange = deletedLoan.amount; }
+                    else if (deletedLoan.type === 'given' && deletedLoan.action === 'repay-loan') { amountChange = -deletedLoan.amount; }
+                    else if (deletedLoan.type === 'received' && deletedLoan.action === 'new-loan') { amountChange = -deletedLoan.amount; }
+                    else if (deletedLoan.type === 'received' && deletedLoan.action === 'repay-loan') { amountChange = deletedLoan.amount; }
+                    updateBalance('Cash in Hand', amountChange);
+                    loans.splice(index, 1);
+                    renderLoans();
+                    displayMessage('Loan record deleted.', 'success', loanMessageBox);
+                    saveData();
+                }
+            }
+
+            function printRecords() {
+                const appContent = document.getElementById('app-content');
+                const printContent = document.createElement('div');
+
+                const total = balances['Faysal Bank'] + balances['EasyPaisa'] + balances['JazzCash'] + balances['Cash in Hand'];
+
+                // Generate Balances Section
+                const balancesHtml = `
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">Current Balances</h2>
+                        <div style="background-color: #1a202c; color: #fff; padding: 1rem; border-radius: 0.5rem; text-align: center; margin-bottom: 1rem;">
+                            <p style="font-size: 1rem; opacity: 0.9;">Total Balance</p>
+                            <p style="font-size: 2rem; font-weight: bold;">Rs. ${total.toLocaleString()}</p>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; color: #fff;">
+                            ${Object.keys(balances).map(account => `
+                                <div style="background-color: #2b6cb0; padding: 1.5rem; border-radius: 0.5rem; text-align: center;">
+                                    <h3 style="font-size: 1.125rem; font-weight: 600; opacity: 0.9;">${account}</h3>
+                                    <p style="font-size: 1.5rem; font-weight: bold;">Rs. ${balances[account].toLocaleString()}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                // Generate Transactions Section
+                const transactionsHtml = `
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">All Transactions</h2>
+                        <ul style="list-style: none; padding: 0;">
+                            ${transactions.slice().reverse().map(t => `
+                                <li style="padding: 1rem; border-bottom: 1px solid #ccc;">
+                                    <strong>${t.type === 'add-money' ? `Added to ${t.account}` : t.type === 'cash-in' ? `Cash-in from ${t.account}` : `Cash-out to ${t.account}`}</strong>
+                                    <span style="float: right; font-weight: bold; color: ${t.type === 'cash-out' ? 'red' : 'green'};">Rs. ${t.type === 'cash-out' ? '-' : '+'}${t.amount.toLocaleString()}</span>
+                                    <br><small style="color: #666;">${new Date(t.timestamp).toLocaleString()}</small>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+
+                // Generate Expenses Section
+                const expensesHtml = `
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">Recent Expenses</h2>
+                        <ul style="list-style: none; padding: 0;">
+                            ${expenses.slice().reverse().map(e => `
+                                <li style="padding: 1rem; border-bottom: 1px solid #ccc;">
+                                    <strong>${e.reason}</strong>
+                                    <span style="float: right; font-weight: bold; color: red;">Rs. -${e.amount.toLocaleString()}</span>
+                                    <br><small style="color: #666;">${new Date(e.timestamp).toLocaleString()}</small>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+
+                // Generate Loans Section
+                const loansHtml = `
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">Loan Records</h2>
+                        <ul style="list-style: none; padding: 0;">
+                            ${loans.slice().reverse().map(l => {
+                                let actionLabel = l.action === 'new-loan' ? 'New Loan' : 'Repayment';
+                                let typeLabel = l.type === 'given' ? 'Given' : 'Received';
+                                let amountSign = (l.type === 'given' && l.action === 'new-loan') || (l.type === 'received' && l.action === 'repay-loan') ? '-' : '+';
+                                let amountColor = (l.type === 'given' && l.action === 'new-loan') || (l.type === 'received' && l.action === 'repay-loan') ? 'red' : 'green';
+                                
+                                return `
+                                    <li style="padding: 1rem; border-bottom: 1px solid #ccc;">
+                                        <strong>${l.name} - ${actionLabel} (${typeLabel})</strong>
+                                        <span style="float: right; font-weight: bold; color: ${amountColor};">Rs. ${amountSign}${l.amount.toLocaleString()}</span>
+                                        <br><small style="color: #666;">${new Date(l.timestamp).toLocaleString()}</small>
+                                    </li>
+                                `;
+                            }).join('')}
+                        </ul>
+                    </div>
+                `;
+
+                printContent.innerHTML = `
+                    <div style="padding: 2rem;">
+                        <h1 style="text-align: center; font-size: 2rem; font-weight: bold; margin-bottom: 2rem;">Zaman Photcopy Cash Record</h1>
+                        ${balancesHtml}
+                        ${transactionsHtml}
+                        ${expensesHtml}
+                        ${loansHtml}
+                    </div>
+                `;
+
+                const originalBody = document.body.innerHTML;
+                document.body.innerHTML = printContent.innerHTML;
+                window.print();
+                document.body.innerHTML = originalBody;
+                
+                // Re-attach event listeners after restoring the DOM
+                document.getElementById('login-form').addEventListener('submit', handleLoginForm);
+                document.getElementById('add-money-form').addEventListener('submit', handleAddMoneyForm);
+                document.getElementById('transaction-form').addEventListener('submit', handleTransactionForm);
+                document.getElementById('expense-form').addEventListener('submit', handleExpenseForm);
+                document.getElementById('loan-form').addEventListener('submit', handleLoanForm);
+                document.getElementById('change-password-form').addEventListener('submit', handleChangePasswordForm);
+                document.getElementById('clear-transactions-btn').addEventListener('click', handleClearTransactions);
+                document.getElementById('clear-expenses-btn').addEventListener('click', handleClearExpenses);
+                document.getElementById('print-records-btn').addEventListener('click', printRecords);
+                transactionsList.addEventListener('click', handleDeleteTransaction);
+                expensesList.addEventListener('click', handleDeleteExpense);
+                loansList.addEventListener('click', handleDeleteLoan);
+            }
+
+            // Centralized handlers for event listeners
+            function handleLoginForm(e) {
+                e.preventDefault();
+                const enteredPassword = document.getElementById('password-input').value;
+                
+                if (enteredPassword === correctPassword) {
+                    loginSection.classList.add('hidden');
+                    appContent.classList.remove('hidden');
+                    renderBalances();
+                    renderTotalBalance();
+                    renderTransactions();
+                    renderExpenses();
+                    renderLoans();
+                    saveData();
+                } else {
+                    displayMessage('Incorrect password. Please try again.', 'error', loginMessageBox);
+                }
+            }
+            function handleAddMoneyForm(e) {
+                e.preventDefault();
+                const account = document.getElementById('add-money-account-select').value;
+                const amount = parseInt(document.getElementById('add-money-amount-input').value);
+                if (!amount) {
+                    displayMessage('Please enter an amount.', 'error', addMoneyMessageBox);
+                    return;
+                }
+                updateBalance(account, amount);
+                const newTransaction = { type: 'add-money', account, amount: amount, profit: 0, timestamp: new Date().toISOString() };
+                transactions.push(newTransaction);
+                renderTransactions();
+                displayMessage('Money added successfully!', 'success', addMoneyMessageBox);
+                saveData();
+                addMoneyForm.reset();
+            }
+            function handleTransactionForm(e) {
+                e.preventDefault();
+                const type = document.getElementById('transaction-type-select').value;
+                const account = document.getElementById('account-select').value;
+                const amount = parseInt(document.getElementById('amount-input').value);
+                if (!amount) {
+                    displayMessage('Please enter an amount.', 'error', transactionMessageBox);
+                    return;
+                }
+                let profitAmount = 0;
+                let accountChange = 0;
+                let cashInHandChange = 0;
+                const profitAccounts = ['Faysal Bank', 'EasyPaisa', 'JazzCash'];
+                const isProfitAccount = profitAccounts.includes(account);
+                if (type === 'cash-in') {
+                    accountChange = -amount;
+                    cashInHandChange = amount;
+                    if (isProfitAccount) { profitAmount = amount * 0.01; }
+                } else if (type === 'cash-out') {
+                    accountChange = amount;
+                    cashInHandChange = -amount;
+                    if (isProfitAccount) { profitAmount = amount * 0.02; }
+                }
+                updateBalance(account, accountChange);
+                updateBalance('Cash in Hand', cashInHandChange);
+                updateBalance('Profit', profitAmount);
+                const newTransaction = { type, account, amount: amount, profit: profitAmount, timestamp: new Date().toISOString() };
+                transactions.push(newTransaction);
+                renderTransactions();
+                displayMessage('Transaction recorded successfully!', 'success', transactionMessageBox);
+                saveData();
+                transactionForm.reset();
+            }
+            function handleExpenseForm(e) {
+                e.preventDefault();
+                const amount = document.getElementById('expense-amount-input').value;
+                const reason = document.getElementById('expense-reason-input').value.trim();
+                if (amount === '' || reason === '') {
+                    displayMessage('Please fill out all fields.', 'error', expenseMessageBox);
+                    return;
+                }
+                const parsedAmount = parseInt(amount);
+                updateBalance('Cash in Hand', -parsedAmount);
+                const newExpense = { amount: parsedAmount, reason, timestamp: new Date().toISOString() };
+                expenses.push(newExpense);
+                renderExpenses();
+                displayMessage('Expense recorded successfully!', 'success', expenseMessageBox);
+                saveData();
+                expenseForm.reset();
+            }
+            function handleLoanForm(e) {
+                e.preventDefault();
+                const action = document.getElementById('loan-action-select').value;
+                const type = document.getElementById('loan-type-select').value;
+                const amount = parseInt(document.getElementById('loan-amount-input').value);
+                const name = document.getElementById('loan-name-input').value.trim();
+                if (amount === '' || name === '') {
+                    displayMessage('Please fill out all fields.', 'error', loanMessageBox);
+                    return;
+                }
+                let amountChange = 0;
+                if (type === 'given' && action === 'new-loan') { amountChange = -amount; }
+                else if (type === 'given' && action === 'repay-loan') { amountChange = amount; }
+                else if (type === 'received' && action === 'new-loan') { amountChange = amount; }
+                else if (type === 'received' && action === 'repay-loan') { amountChange = -amount; }
+                updateBalance('Cash in Hand', amountChange);
+                const newLoan = { action, type, amount, name, timestamp: new Date().toISOString() };
+                loans.push(newLoan);
+                renderLoans();
+                displayMessage('Loan record added successfully!', 'success', loanMessageBox);
+                saveData();
+                loanForm.reset();
+            }
+            function handleChangePasswordForm(e) {
+                e.preventDefault();
+                const currentPassword = document.getElementById('current-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmNewPassword = document.getElementById('confirm-new-password').value;
+                if (currentPassword === '' || newPassword === '' || confirmNewPassword === '') {
+                    displayMessage('All fields are required.', 'error', changePasswordMessageBox);
+                    return;
+                }
+                if (currentPassword !== correctPassword) {
+                    displayMessage('Incorrect current password.', 'error', changePasswordMessageBox);
+                    return;
+                }
+                if (newPassword !== confirmNewPassword) {
+                    displayMessage('New passwords do not match.', 'error', changePasswordMessageBox);
+                    return;
+                }
+                correctPassword = newPassword;
+                saveData();
+                displayMessage('Password changed successfully!', 'success', changePasswordMessageBox);
+                changePasswordForm.reset();
+            }
+            function handleClearTransactions() {
+                if (window.confirm('This will permanently delete ALL transaction records (Cash-in, Cash-out, Add Money) and reset ALL account balances and profit to zero. Are you sure?')) {
+                    transactions = [];
+                    balances = { 'Faysal Bank': 0, 'EasyPaisa': 0, 'JazzCash': 0, 'Cash in Hand': 0, 'Profit': 0 };
+                    renderBalances();
+                    renderTotalBalance();
+                    renderTransactions();
+                    saveData();
+                    displayMessage('All transaction records have been cleared.', 'success', resetMessageBox);
+                }
+            }
+            function handleClearExpenses() {
+                if (window.confirm('This will permanently delete ALL expense records. The "Cash in Hand" balance will also be reset to zero to reflect the change. Are you sure?')) {
+                    expenses = [];
+                    balances['Cash in Hand'] = 0;
+                    renderBalances();
+                    renderTotalBalance();
+                    renderExpenses();
+                    saveData();
+                    displayMessage('All expense records have been cleared.', 'success', resetMessageBox);
+                }
+            }
+            function handleDeleteTransaction(e) {
+                if (e.target.closest('.delete-btn')) {
+                    const btn = e.target.closest('.delete-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedTransaction = transactions[index];
+                    let accountChange = 0;
+                    let cashInHandChange = 0;
+                    if (deletedTransaction.type === 'add-money') { updateBalance(deletedTransaction.account, -deletedTransaction.amount); }
+                    else if (deletedTransaction.type === 'cash-in') { accountChange = deletedTransaction.amount; cashInHandChange = -deletedTransaction.amount; updateBalance(deletedTransaction.account, accountChange); updateBalance('Cash in Hand', cashInHandChange); }
+                    else if (deletedTransaction.type === 'cash-out') { accountChange = -deletedTransaction.amount; cashInHandChange = deletedTransaction.amount; updateBalance(deletedTransaction.account, accountChange); updateBalance('Cash in Hand', cashInHandChange); }
+                    if (deletedTransaction.profit > 0) { updateBalance('Profit', -deletedTransaction.profit); }
+                    transactions.splice(index, 1);
+                    renderTransactions();
+                    displayMessage('Transaction deleted.', 'success', transactionMessageBox);
+                    saveData();
+                }
+            }
+            function handleDeleteExpense(e) {
+                if (e.target.closest('.delete-expense-btn')) {
+                    const btn = e.target.closest('.delete-expense-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedExpense = expenses[index];
+                    updateBalance('Cash in Hand', deletedExpense.amount);
+                    expenses.splice(index, 1);
+                    renderExpenses();
+                    displayMessage('Expense deleted.', 'success', expenseMessageBox);
+                    saveData();
+                }
+            }
+            function handleDeleteLoan(e) {
+                if (e.target.closest('.delete-loan-btn')) {
+                    const btn = e.target.closest('.delete-loan-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedLoan = loans[index];
+                    let amountChange = 0;
+                    if (deletedLoan.type === 'given' && deletedLoan.action === 'new-loan') { amountChange = deletedLoan.amount; }
+                    else if (deletedLoan.type === 'given' && deletedLoan.action === 'repay-loan') { amountChange = -deletedLoan.amount; }
+                    else if (deletedLoan.type === 'received' && deletedLoan.action === 'new-loan') { amountChange = -deletedLoan.amount; }
+                    else if (deletedLoan.type === 'received' && deletedLoan.action === 'repay-loan') { amountChange = deletedLoan.amount; }
+                    updateBalance('Cash in Hand', amountChange);
+                    loans.splice(index, 1);
+                    renderLoans();
+                    displayMessage('Loan record deleted.', 'success', loanMessageBox);
+                    saveData();
+                }
+            }
+
+            function printRecords() {
+                const appContent = document.getElementById('app-content');
+                const printContent = document.createElement('div');
+
+                const total = balances['Faysal Bank'] + balances['EasyPaisa'] + balances['JazzCash'] + balances['Cash in Hand'];
+
+                // Generate Balances Section
+                const balancesHtml = `
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">Current Balances</h2>
+                        <div style="background-color: #1a202c; color: #fff; padding: 1rem; border-radius: 0.5rem; text-align: center; margin-bottom: 1rem;">
+                            <p style="font-size: 1rem; opacity: 0.9;">Total Balance</p>
+                            <p style="font-size: 2rem; font-weight: bold;">Rs. ${total.toLocaleString()}</p>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; color: #fff;">
+                            ${Object.keys(balances).map(account => `
+                                <div style="background-color: #2b6cb0; padding: 1.5rem; border-radius: 0.5rem; text-align: center;">
+                                    <h3 style="font-size: 1.125rem; font-weight: 600; opacity: 0.9;">${account}</h3>
+                                    <p style="font-size: 1.5rem; font-weight: bold;">Rs. ${balances[account].toLocaleString()}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                // Generate Transactions Section
+                const transactionsHtml = `
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">All Transactions</h2>
+                        <ul style="list-style: none; padding: 0;">
+                            ${transactions.slice().reverse().map(t => `
+                                <li style="padding: 1rem; border-bottom: 1px solid #ccc;">
+                                    <strong>${t.type === 'add-money' ? `Added to ${t.account}` : t.type === 'cash-in' ? `Cash-in from ${t.account}` : `Cash-out to ${t.account}`}</strong>
+                                    <span style="float: right; font-weight: bold; color: ${t.type === 'cash-out' ? 'red' : 'green'};">Rs. ${t.type === 'cash-out' ? '-' : '+'}${t.amount.toLocaleString()}</span>
+                                    <br><small style="color: #666;">${new Date(t.timestamp).toLocaleString()}</small>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+
+                // Generate Expenses Section
+                const expensesHtml = `
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">Recent Expenses</h2>
+                        <ul style="list-style: none; padding: 0;">
+                            ${expenses.slice().reverse().map(e => `
+                                <li style="padding: 1rem; border-bottom: 1px solid #ccc;">
+                                    <strong>${e.reason}</strong>
+                                    <span style="float: right; font-weight: bold; color: red;">Rs. -${e.amount.toLocaleString()}</span>
+                                    <br><small style="color: #666;">${new Date(e.timestamp).toLocaleString()}</small>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+
+                // Generate Loans Section
+                const loansHtml = `
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">Loan Records</h2>
+                        <ul style="list-style: none; padding: 0;">
+                            ${loans.slice().reverse().map(l => {
+                                let actionLabel = l.action === 'new-loan' ? 'New Loan' : 'Repayment';
+                                let typeLabel = l.type === 'given' ? 'Given' : 'Received';
+                                let amountSign = (l.type === 'given' && l.action === 'new-loan') || (l.type === 'received' && l.action === 'repay-loan') ? '-' : '+';
+                                let amountColor = (l.type === 'given' && l.action === 'new-loan') || (l.type === 'received' && l.action === 'repay-loan') ? 'red' : 'green';
+                                
+                                return `
+                                    <li style="padding: 1rem; border-bottom: 1px solid #ccc;">
+                                        <strong>${l.name} - ${actionLabel} (${typeLabel})</strong>
+                                        <span style="float: right; font-weight: bold; color: ${amountColor};">Rs. ${amountSign}${l.amount.toLocaleString()}</span>
+                                        <br><small style="color: #666;">${new Date(l.timestamp).toLocaleString()}</small>
+                                    </li>
+                                `;
+                            }).join('')}
+                        </ul>
+                    </div>
+                `;
+
+                printContent.innerHTML = `
+                    <div style="padding: 2rem;">
+                        <h1 style="text-align: center; font-size: 2rem; font-weight: bold; margin-bottom: 2rem;">Zaman Photcopy Cash Record</h1>
+                        ${balancesHtml}
+                        ${transactionsHtml}
+                        ${expensesHtml}
+                        ${loansHtml}
+                    </div>
+                `;
+
+                const originalBody = document.body.innerHTML;
+                document.body.innerHTML = printContent.innerHTML;
+                window.print();
+                document.body.innerHTML = originalBody;
+                
+                // Re-attach event listeners after restoring the DOM
+                document.getElementById('login-form').addEventListener('submit', handleLoginForm);
+                document.getElementById('add-money-form').addEventListener('submit', handleAddMoneyForm);
+                document.getElementById('transaction-form').addEventListener('submit', handleTransactionForm);
+                document.getElementById('expense-form').addEventListener('submit', handleExpenseForm);
+                document.getElementById('loan-form').addEventListener('submit', handleLoanForm);
+                document.getElementById('change-password-form').addEventListener('submit', handleChangePasswordForm);
+                document.getElementById('clear-transactions-btn').addEventListener('click', handleClearTransactions);
+                document.getElementById('clear-expenses-btn').addEventListener('click', handleClearExpenses);
+                document.getElementById('print-records-btn').addEventListener('click', printRecords);
+                transactionsList.addEventListener('click', handleDeleteTransaction);
+                expensesList.addEventListener('click', handleDeleteExpense);
+                loansList.addEventListener('click', handleDeleteLoan);
+            }
+
+            // Centralized handlers for event listeners
+            function handleLoginForm(e) {
+                e.preventDefault();
+                const enteredPassword = document.getElementById('password-input').value;
+                
+                if (enteredPassword === correctPassword) {
+                    loginSection.classList.add('hidden');
+                    appContent.classList.remove('hidden');
+                    renderBalances();
+                    renderTotalBalance();
+                    renderTransactions();
+                    renderExpenses();
+                    renderLoans();
+                    saveData();
+                } else {
+                    displayMessage('Incorrect password. Please try again.', 'error', loginMessageBox);
+                }
+            }
+            function handleAddMoneyForm(e) {
+                e.preventDefault();
+                const account = document.getElementById('add-money-account-select').value;
+                const amount = parseInt(document.getElementById('add-money-amount-input').value);
+                if (!amount) {
+                    displayMessage('Please enter an amount.', 'error', addMoneyMessageBox);
+                    return;
+                }
+                updateBalance(account, amount);
+                const newTransaction = { type: 'add-money', account, amount: amount, profit: 0, timestamp: new Date().toISOString() };
+                transactions.push(newTransaction);
+                renderTransactions();
+                displayMessage('Money added successfully!', 'success', addMoneyMessageBox);
+                saveData();
+                addMoneyForm.reset();
+            }
+            function handleTransactionForm(e) {
+                e.preventDefault();
+                const type = document.getElementById('transaction-type-select').value;
+                const account = document.getElementById('account-select').value;
+                const amount = parseInt(document.getElementById('amount-input').value);
+                if (!amount) {
+                    displayMessage('Please enter an amount.', 'error', transactionMessageBox);
+                    return;
+                }
+                let profitAmount = 0;
+                let accountChange = 0;
+                let cashInHandChange = 0;
+                const profitAccounts = ['Faysal Bank', 'EasyPaisa', 'JazzCash'];
+                const isProfitAccount = profitAccounts.includes(account);
+                if (type === 'cash-in') {
+                    accountChange = -amount;
+                    cashInHandChange = amount;
+                    if (isProfitAccount) { profitAmount = amount * 0.01; }
+                } else if (type === 'cash-out') {
+                    accountChange = amount;
+                    cashInHandChange = -amount;
+                    if (isProfitAccount) { profitAmount = amount * 0.02; }
+                }
+                updateBalance(account, accountChange);
+                updateBalance('Cash in Hand', cashInHandChange);
+                updateBalance('Profit', profitAmount);
+                const newTransaction = { type, account, amount: amount, profit: profitAmount, timestamp: new Date().toISOString() };
+                transactions.push(newTransaction);
+                renderTransactions();
+                displayMessage('Transaction recorded successfully!', 'success', transactionMessageBox);
+                saveData();
+                transactionForm.reset();
+            }
+            function handleExpenseForm(e) {
+                e.preventDefault();
+                const amount = document.getElementById('expense-amount-input').value;
+                const reason = document.getElementById('expense-reason-input').value.trim();
+                if (amount === '' || reason === '') {
+                    displayMessage('Please fill out all fields.', 'error', expenseMessageBox);
+                    return;
+                }
+                const parsedAmount = parseInt(amount);
+                updateBalance('Cash in Hand', -parsedAmount);
+                const newExpense = { amount: parsedAmount, reason, timestamp: new Date().toISOString() };
+                expenses.push(newExpense);
+                renderExpenses();
+                displayMessage('Expense recorded successfully!', 'success', expenseMessageBox);
+                saveData();
+                expenseForm.reset();
+            }
+            function handleLoanForm(e) {
+                e.preventDefault();
+                const action = document.getElementById('loan-action-select').value;
+                const type = document.getElementById('loan-type-select').value;
+                const amount = parseInt(document.getElementById('loan-amount-input').value);
+                const name = document.getElementById('loan-name-input').value.trim();
+                if (amount === '' || name === '') {
+                    displayMessage('Please fill out all fields.', 'error', loanMessageBox);
+                    return;
+                }
+                let amountChange = 0;
+                if (type === 'given' && action === 'new-loan') { amountChange = -amount; }
+                else if (type === 'given' && action === 'repay-loan') { amountChange = amount; }
+                else if (type === 'received' && action === 'new-loan') { amountChange = amount; }
+                else if (type === 'received' && action === 'repay-loan') { amountChange = -amount; }
+                updateBalance('Cash in Hand', amountChange);
+                const newLoan = { action, type, amount, name, timestamp: new Date().toISOString() };
+                loans.push(newLoan);
+                renderLoans();
+                displayMessage('Loan record added successfully!', 'success', loanMessageBox);
+                saveData();
+                loanForm.reset();
+            }
+            function handleChangePasswordForm(e) {
+                e.preventDefault();
+                const currentPassword = document.getElementById('current-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmNewPassword = document.getElementById('confirm-new-password').value;
+                if (currentPassword === '' || newPassword === '' || confirmNewPassword === '') {
+                    displayMessage('All fields are required.', 'error', changePasswordMessageBox);
+                    return;
+                }
+                if (currentPassword !== correctPassword) {
+                    displayMessage('Incorrect current password.', 'error', changePasswordMessageBox);
+                    return;
+                }
+                if (newPassword !== confirmNewPassword) {
+                    displayMessage('New passwords do not match.', 'error', changePasswordMessageBox);
+                    return;
+                }
+                correctPassword = newPassword;
+                saveData();
+                displayMessage('Password changed successfully!', 'success', changePasswordMessageBox);
+                changePasswordForm.reset();
+            }
+            function handleClearTransactions() {
+                if (window.confirm('This will permanently delete ALL transaction records (Cash-in, Cash-out, Add Money) and reset ALL account balances and profit to zero. Are you sure?')) {
+                    transactions = [];
+                    balances = { 'Faysal Bank': 0, 'EasyPaisa': 0, 'JazzCash': 0, 'Cash in Hand': 0, 'Profit': 0 };
+                    renderBalances();
+                    renderTotalBalance();
+                    renderTransactions();
+                    saveData();
+                    displayMessage('All transaction records have been cleared.', 'success', resetMessageBox);
+                }
+            }
+            function handleClearExpenses() {
+                if (window.confirm('This will permanently delete ALL expense records. The "Cash in Hand" balance will also be reset to zero to reflect the change. Are you sure?')) {
+                    expenses = [];
+                    balances['Cash in Hand'] = 0;
+                    renderBalances();
+                    renderTotalBalance();
+                    renderExpenses();
+                    saveData();
+                    displayMessage('All expense records have been cleared.', 'success', resetMessageBox);
+                }
+            }
+            function handleDeleteTransaction(e) {
+                if (e.target.closest('.delete-btn')) {
+                    const btn = e.target.closest('.delete-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedTransaction = transactions[index];
+                    let accountChange = 0;
+                    let cashInHandChange = 0;
+                    if (deletedTransaction.type === 'add-money') { updateBalance(deletedTransaction.account, -deletedTransaction.amount); }
+                    else if (deletedTransaction.type === 'cash-in') { accountChange = deletedTransaction.amount; cashInHandChange = -deletedTransaction.amount; updateBalance(deletedTransaction.account, accountChange); updateBalance('Cash in Hand', cashInHandChange); }
+                    else if (deletedTransaction.type === 'cash-out') { accountChange = -deletedTransaction.amount; cashInHandChange = deletedTransaction.amount; updateBalance(deletedTransaction.account, accountChange); updateBalance('Cash in Hand', cashInHandChange); }
+                    if (deletedTransaction.profit > 0) { updateBalance('Profit', -deletedTransaction.profit); }
+                    transactions.splice(index, 1);
+                    renderTransactions();
+                    displayMessage('Transaction deleted.', 'success', transactionMessageBox);
+                    saveData();
+                }
+            }
+            function handleDeleteExpense(e) {
+                if (e.target.closest('.delete-expense-btn')) {
+                    const btn = e.target.closest('.delete-expense-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedExpense = expenses[index];
+                    updateBalance('Cash in Hand', deletedExpense.amount);
+                    expenses.splice(index, 1);
+                    renderExpenses();
+                    displayMessage('Expense deleted.', 'success', expenseMessageBox);
+                    saveData();
+                }
+            }
+            function handleDeleteLoan(e) {
+                if (e.target.closest('.delete-loan-btn')) {
+                    const btn = e.target.closest('.delete-loan-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedLoan = loans[index];
+                    let amountChange = 0;
+                    if (deletedLoan.type === 'given' && deletedLoan.action === 'new-loan') { amountChange = deletedLoan.amount; }
+                    else if (deletedLoan.type === 'given' && deletedLoan.action === 'repay-loan') { amountChange = -deletedLoan.amount; }
+                    else if (deletedLoan.type === 'received' && deletedLoan.action === 'new-loan') { amountChange = -deletedLoan.amount; }
+                    else if (deletedLoan.type === 'received' && deletedLoan.action === 'repay-loan') { amountChange = deletedLoan.amount; }
+                    updateBalance('Cash in Hand', amountChange);
+                    loans.splice(index, 1);
+                    renderLoans();
+                    displayMessage('Loan record deleted.', 'success', loanMessageBox);
+                    saveData();
+                }
+            }
+
+            // Initial and persistent event listeners
+            document.getElementById('print-records-btn').addEventListener('click', printRecords);
+            document.getElementById('login-form').addEventListener('submit', handleLoginForm);
+            document.getElementById('add-money-form').addEventListener('submit', handleAddMoneyForm);
+            document.getElementById('transaction-form').addEventListener('submit', handleTransactionForm);
+            document.getElementById('expense-form').addEventListener('submit', handleExpenseForm);
+            document.getElementById('loan-form').addEventListener('submit', handleLoanForm);
+            document.getElementById('change-password-form').addEventListener('submit', handleChangePasswordForm);
+            document.getElementById('clear-transactions-btn').addEventListener('click', handleClearTransactions);
+            document.getElementById('clear-expenses-btn').addEventListener('click', handleClearExpenses);
+            transactionsList.addEventListener('click', handleDeleteTransaction);
+            expensesList.addEventListener('click', handleDeleteExpense);
+            loansList.addEventListener('click', handleDeleteLoan);
+            
+            loadData();
+            if (localStorage.getItem(DATA_KEY)) {
+                loginSection.classList.add('hidden');
+                appContent.classList.remove('hidden');
+                renderBalances();
+                renderTotalBalance();
+                renderTransactions();
+                renderExpenses();
+                renderLoans();
+            }
+        });
+    </script>
+</body>
+</html>
