@@ -114,6 +114,10 @@
                             <label for="amount-input" class="block text-sm font-medium text-gray-700">Amount</label>
                             <input type="number" id="amount-input" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" placeholder="e.g., 5000">
                         </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="profit-checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="profit-checkbox" class="ml-2 block text-sm font-medium text-gray-700">Apply Profit</label>
+                        </div>
                         <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             Record Transaction
                         </button>
@@ -137,6 +141,16 @@
                         <div>
                             <label for="expense-reason-input" class="block text-sm font-medium text-gray-700">Reason</label>
                             <input type="text" id="expense-reason-input" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" placeholder="e.g., Electricity bill">
+                        </div>
+                        <div>
+                            <label for="expense-account-select" class="block text-sm font-medium text-gray-700">Account</label>
+                            <select id="expense-account-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md">
+                                <option value="Faysal Bank">Faysal Bank</option>
+                                <option value="EasyPaisa">EasyPaisa</option>
+                                <option value="JazzCash">JazzCash</option>
+                                <option value="UBL">UBL</option>
+                                <option value="Cash in Hand">Cash in Hand</option>
+                            </select>
                         </div>
                         <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                             Record Expense
@@ -438,7 +452,7 @@
                         const detailsHtml = `
                             <div>
                                 <h3 class="font-bold text-gray-900">${expense.reason}</h3>
-                                <p class="text-sm text-gray-600">From Cash in Hand</p>
+                                <p class="text-sm text-gray-600">From ${expense.account}</p>
                             </div>
                             <div class="text-right flex items-center space-x-2">
                                 <span class="font-bold text-red-600">Rs. -${expense.amount.toLocaleString()}</span>
@@ -559,7 +573,7 @@
                     account,
                     amount: amount,
                     profit: 0,
-                    balanceAfterTransaction: balances[account], // Correctly records the balance of the target account
+                    balanceAfterTransaction: balances[account],
                     timestamp: new Date().toISOString()
                 };
 
@@ -577,6 +591,7 @@
                 const type = document.getElementById('transaction-type-select').value;
                 const account = document.getElementById('account-select').value;
                 const amount = parseInt(document.getElementById('amount-input').value);
+                const applyProfit = document.getElementById('profit-checkbox').checked;
 
                 if (!amount) {
                     displayMessage('Please enter an amount.', 'error', transactionMessageBox);
@@ -586,25 +601,28 @@
                 let profitAmount = 0;
                 let accountChange = 0;
                 let cashInHandChange = 0;
-
-                // Profit applies only to these accounts
-                const profitAccounts = ['Faysal Bank', 'EasyPaisa', 'JazzCash', 'UBL'];
-                const isProfitAccount = profitAccounts.includes(account);
                 
+                if (applyProfit) {
+                    // Profit applies only to these accounts
+                    const profitAccounts = ['Faysal Bank', 'EasyPaisa', 'JazzCash', 'UBL'];
+                    const isProfitAccount = profitAccounts.includes(account);
+                    if (isProfitAccount) {
+                        if (type === 'cash-in') {
+                            profitAmount = amount * 0.01; // 1% profit
+                        } else if (type === 'cash-out') {
+                            profitAmount = amount * 0.02; // 2% profit
+                        }
+                    }
+                }
+
                 if (type === 'cash-in') {
                     // Money goes from the bank to Cash in Hand
                     accountChange = -amount;
                     cashInHandChange = amount;
-                    if (isProfitAccount) {
-                        profitAmount = amount * 0.01; // 1% profit
-                    }
                 } else if (type === 'cash-out') {
                     // Money goes from Cash in Hand to the bank
                     accountChange = amount;
                     cashInHandChange = -amount;
-                    if (isProfitAccount) {
-                        profitAmount = amount * 0.02; // 2% profit
-                    }
                 }
 
                 // Update balances
@@ -617,7 +635,7 @@
                     account,
                     amount: amount,
                     profit: profitAmount,
-                    balanceAfterTransaction: balances['Cash in Hand'], // Correctly records the balance of Cash in Hand
+                    balanceAfterTransaction: balances['Cash in Hand'],
                     timestamp: new Date().toISOString()
                 };
 
@@ -633,6 +651,7 @@
                 
                 const amount = document.getElementById('expense-amount-input').value;
                 const reason = document.getElementById('expense-reason-input').value.trim();
+                const account = document.getElementById('expense-account-select').value;
 
                 if (amount === '' || reason === '') {
                     displayMessage('Please fill out all fields.', 'error', expenseMessageBox);
@@ -641,12 +660,13 @@
 
                 const parsedAmount = parseInt(amount);
                 
-                // Deduct expense from Cash in Hand
-                updateBalance('Cash in Hand', -parsedAmount);
+                // Deduct expense from the selected account
+                updateBalance(account, -parsedAmount);
 
                 const newExpense = {
                     amount: parsedAmount,
                     reason,
+                    account,
                     timestamp: new Date().toISOString()
                 };
 
@@ -748,8 +768,8 @@
                     const index = parseInt(btn.dataset.index);
                     const deletedExpense = expenses[index];
                     
-                    // Reverse the expense change by adding it back to Cash in Hand
-                    updateBalance('Cash in Hand', deletedExpense.amount);
+                    // Reverse the expense change by adding it back to the correct account
+                    updateBalance(deletedExpense.account, deletedExpense.amount);
                     
                     expenses.splice(index, 1);
                     renderExpenses();
@@ -875,6 +895,7 @@
                                 <li style="padding: 1rem; border-bottom: 1px solid #ccc;">
                                     <strong>${e.reason}</strong>
                                     <span style="float: right; font-weight: bold; color: red;">Rs. -${e.amount.toLocaleString()}</span>
+                                    <br><small style="color: #666;">From ${e.account}</small>
                                     <br><small style="color: #666;">${new Date(e.timestamp).toLocaleString()}</small>
                                 </li>
                             `).join('')}
@@ -973,6 +994,7 @@
                 const type = document.getElementById('transaction-type-select').value;
                 const account = document.getElementById('account-select').value;
                 const amount = parseInt(document.getElementById('amount-input').value);
+                const applyProfit = document.getElementById('profit-checkbox').checked;
                 if (!amount) {
                     displayMessage('Please enter an amount.', 'error', transactionMessageBox);
                     return;
@@ -980,16 +1002,20 @@
                 let profitAmount = 0;
                 let accountChange = 0;
                 let cashInHandChange = 0;
-                const profitAccounts = ['Faysal Bank', 'EasyPaisa', 'JazzCash', 'UBL'];
-                const isProfitAccount = profitAccounts.includes(account);
+                if (applyProfit) {
+                    const profitAccounts = ['Faysal Bank', 'EasyPaisa', 'JazzCash', 'UBL'];
+                    const isProfitAccount = profitAccounts.includes(account);
+                    if (isProfitAccount) {
+                        if (type === 'cash-in') { profitAmount = amount * 0.01; }
+                        else if (type === 'cash-out') { profitAmount = amount * 0.02; }
+                    }
+                }
                 if (type === 'cash-in') {
                     accountChange = -amount;
                     cashInHandChange = amount;
-                    if (isProfitAccount) { profitAmount = amount * 0.01; }
                 } else if (type === 'cash-out') {
                     accountChange = amount;
                     cashInHandChange = -amount;
-                    if (isProfitAccount) { profitAmount = amount * 0.02; }
                 }
                 updateBalance(account, accountChange);
                 updateBalance('Cash in Hand', cashInHandChange);
@@ -1005,13 +1031,14 @@
                 e.preventDefault();
                 const amount = document.getElementById('expense-amount-input').value;
                 const reason = document.getElementById('expense-reason-input').value.trim();
+                const account = document.getElementById('expense-account-select').value;
                 if (amount === '' || reason === '') {
                     displayMessage('Please fill out all fields.', 'error', expenseMessageBox);
                     return;
                 }
                 const parsedAmount = parseInt(amount);
-                updateBalance('Cash in Hand', -parsedAmount);
-                const newExpense = { amount: parsedAmount, reason, timestamp: new Date().toISOString() };
+                updateBalance(account, -parsedAmount);
+                const newExpense = { amount: parsedAmount, reason, account, timestamp: new Date().toISOString() };
                 expenses.push(newExpense);
                 renderExpenses();
                 displayMessage('Expense recorded successfully!', 'success', expenseMessageBox);
@@ -1107,7 +1134,7 @@
                     const btn = e.target.closest('.delete-expense-btn');
                     const index = parseInt(btn.dataset.index);
                     const deletedExpense = expenses[index];
-                    updateBalance('Cash in Hand', deletedExpense.amount);
+                    updateBalance(deletedExpense.account, deletedExpense.amount);
                     expenses.splice(index, 1);
                     renderExpenses();
                     displayMessage('Expense deleted.', 'success', expenseMessageBox);
