@@ -559,7 +559,7 @@
                     account,
                     amount: amount,
                     profit: 0,
-                    balanceAfterTransaction: balances[account],
+                    balanceAfterTransaction: balances[account], // Correctly records the balance of the target account
                     timestamp: new Date().toISOString()
                 };
 
@@ -617,7 +617,7 @@
                     account,
                     amount: amount,
                     profit: profitAmount,
-                    balanceAfterTransaction: balances['Cash in Hand'],
+                    balanceAfterTransaction: balances['Cash in Hand'], // Correctly records the balance of Cash in Hand
                     timestamp: new Date().toISOString()
                 };
 
@@ -929,7 +929,6 @@
                 document.getElementById('change-password-form').addEventListener('submit', handleChangePasswordForm);
                 document.getElementById('clear-transactions-btn').addEventListener('click', handleClearTransactions);
                 document.getElementById('clear-expenses-btn').addEventListener('click', handleClearExpenses);
-                document.getElementById('print-records-btn').addEventListener('click', printRecords);
                 transactionsList.addEventListener('click', handleDeleteTransaction);
                 expensesList.addEventListener('click', handleDeleteExpense);
                 loansList.addEventListener('click', handleDeleteLoan);
@@ -962,7 +961,7 @@
                     return;
                 }
                 updateBalance(account, amount);
-                const newTransaction = { type: 'add-money', account, amount: amount, profit: 0, balanceAfterTransaction: balances['Cash in Hand'], timestamp: new Date().toISOString() };
+                const newTransaction = { type: 'add-money', account, amount: amount, profit: 0, balanceAfterTransaction: balances[account], timestamp: new Date().toISOString() };
                 transactions.push(newTransaction);
                 renderTransactions();
                 displayMessage('Money added successfully!', 'success', addMoneyMessageBox);
