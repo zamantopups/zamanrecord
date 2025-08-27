@@ -324,7 +324,12 @@
             }
 
             function renderTotalBalance() {
-                const total = balances['Faysal Bank'] + balances['EasyPaisa'] + balances['JazzCash'] + balances['UBL'] + balances['Cash in Hand'];
+                let total = 0;
+                for (const account in balances) {
+                    if (account !== 'Profit') {
+                        total += balances[account];
+                    }
+                }
                 totalBalanceContainer.innerHTML = `
                     <p class="text-sm font-semibold opacity-90">Total Balance</p>
                     <p class="text-2xl font-bold">Rs. ${total.toLocaleString()}</p>
@@ -809,7 +814,12 @@
                 const appContent = document.getElementById('app-content');
                 const printContent = document.createElement('div');
 
-                const total = balances['Faysal Bank'] + balances['EasyPaisa'] + balances['JazzCash'] + balances['UBL'] + balances['Cash in Hand'];
+                let total = 0;
+                for (const account in balances) {
+                    if (account !== 'Profit') {
+                        total += balances[account];
+                    }
+                }
 
                 // Generate Balances Section
                 const balancesHtml = `
