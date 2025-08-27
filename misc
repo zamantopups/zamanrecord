@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Record Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .message-box {
+            display: none;
+        }
+        .message-box.show {
+            display: block;
+        }
+        .balance-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .balance-item .balance-amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div id="app" class="max-w-xl mx-auto min-h-screen bg-white shadow-lg flex flex-col">
+        
+        <header class="bg-blue-900 text-white p-4 text-center">
+            <h1 class="text-xl font-bold">Zaman Photcopy Cash Record</h1>
+            <p class="text-sm opacity-80">Keep a record of your transactions.</p>
+        </header>
+
+        <main class="flex-grow p-4 sm:p-6 overflow-y-auto">
+            
+            <section id="login-section" class="bg-white p-6 rounded-xl shadow-md mb-6">
+                <h2 class="text-lg font-semibold mb-4 text-center text-blue-900">Login to your account</h2>
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <label for="password-input" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="password-input" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" placeholder="Enter your password">
+                    </div>
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Login
+                    </button>
+                </form>
+            </section>
+            <div id="login-message-box" class="message-box p-4 rounded-md text-sm mb-4"></div>
+
+            <div id="app-content" class="hidden">
+                <section class="bg-blue-600 text-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-lg font-semibold opacity-90 text-center">Current Balances</h2>
+                    <div id="total-balance-container" class="bg-blue-800 rounded-lg p-4 mb-4 text-center">
+                        </div>
+                    <div id="balance-container" class="grid grid-cols-2 gap-4 mt-4">
+                        </div>
+                </section>
+                
+                <section id="add-money-section" class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-lg font-semibold mb-4 text-center text-blue-900">Add Money</h2>
+                    <form id="add-money-form" class="space-y-4">
+                        <div>
+                            <label for="add-money-amount-input" class="block text-sm font-medium text-gray-700">Amount</label>
+                            <input type="number" id="add-money-amount-input" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" placeholder="e.g., 5000">
+                        </div>
+                        <div>
+                            <label for="add-money-account-select" class="block text-sm font-medium text-gray-700">Account</label>
+                            <select id="add-money-account-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md">
+                                <option value="Faysal Bank">Faysal Bank</option>
+                                <option value="EasyPaisa">EasyPaisa</option>
+                                <option value="JazzCash">JazzCash</option>
+                                <option value="Cash in Hand">Cash in Hand</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Add Money
+                        </button>
+                    </form>
+                </section>
+                <div id="add-money-message-box" class="message-box p-4 rounded-md text-sm mb-4"></div>
+
+
+                <section class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-lg font-semibold mb-4 text-center text-blue-900">New Transaction</h2>
+                    <form id="transaction-form" class="space-y-4">
+                        <div>
+                            <label for="transaction-type-select" class="block text-sm font-medium text-gray-700">Transaction Type</label>
+                            <select id="transaction-type-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md">
+                                <option value="cash-in">Cash-in</option>
+                                <option value="cash-out">Cash-out</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="account-select" class="block text-sm font-medium text-gray-700">Account</label>
+                            <select id="account-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md">
+                                <option value="Faysal Bank">Faysal Bank</option>
+                                <option value="EasyPaisa">EasyPaisa</option>
+                                <option value="JazzCash">JazzCash</option>
+                                <option value="Cash in Hand">Cash in Hand</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="amount-input" class="block text-sm font-medium text-gray-700">Amount</label>
+                            <input type="number" id="amount-input" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" placeholder="e.g., 5000">
+                        </div>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Record Transaction
+                        </button>
+                    </form>
+                </section>
+                <div id="transaction-message-box" class="message-box p-4 rounded-md text-sm mb-4"></div>
+
+                <section class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-lg font-semibold mb-4 text-center text-blue-900">All Transactions</h2>
+                    <div id="transactions-list" class="space-y-4 overflow-y-auto max-h-80">
+                    </div>
+                </section>
+                
+                <section class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-lg font-semibold mb-4 text-center text-blue-900">New Expense</h2>
+                    <form id="expense-form" class="space-y-4">
+                        <div>
+                            <label for="expense-amount-input" class="block text-sm font-medium text-gray-700">Amount</label>
+                            <input type="number" id="expense-amount-input" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" placeholder="e.g., 500">
+                        </div>
+                        <div>
+                            <label for="expense-reason-input" class="block text-sm font-medium text-gray-700">Reason</label>
+                            <input type="text" id="expense-reason-input" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" placeholder="e.g., Electricity bill">
+                        </div>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Record Expense
+                        </button>
+                    </form>
+                </section>
+                <div id="expense-message-box" class="message-box p-4 rounded-md text-sm mb-4"></div>
+
+                <section class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-lg font-semibold mb-4 text-center text-blue-900">Recent Expenses</h2>
+                    <div id="expenses-list" class="space-y-4 overflow-y-auto max-h-80">
+                    </div>
+                </section>
+
+                <section class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-lg font-semibold mb-4 text-center text-blue-900">Loans</h2>
+                    <form id="loan-form" class="space-y-4">
+                        <div>
+                            <label for="loan-action-select" class="block text-sm font-medium text-gray-700">Action</label>
+                            <select id="loan-action-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md">
+                                <option value="new-loan">New Loan</option>
+                                <option value="repay-loan">Repay Loan</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="loan-type-select" class="block text-sm font-medium text-gray-700">Loan Type</label>
+                            <select id="loan-type-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md">
+                                <option value="given">Loan Given</option>
+                                <option value="received">Loan Received</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="loan-amount-input" class="block text-sm font-medium text-gray-700">Amount</label>
+                            <input type="number" id="loan-amount-input" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" placeholder="e.g., 1000">
+                        </div>
+                        <div>
+                            <label for="loan-name-input" class="block text-sm font-medium text-gray-700">Name/Reason</label>
+                            <input type="text" id="loan-name-input" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" placeholder="e.g., Loan to Ali">
+                        </div>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Record Loan
+                        </button>
+                    </form>
+                </section>
+                <div id="loan-message-box" class="message-box p-4 rounded-md text-sm mb-4"></div>
+
+                <section class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-lg font-semibold mb-4 text-center text-blue-900">Loan Records</h2>
+                    <div id="loans-list" class="space-y-4 overflow-y-auto max-h-80">
+                    </div>
+                </section>
+
+                <section class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <button id="print-records-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Print All Records
+                    </button>
+                </section>
+                
+                <section id="change-password-section" class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-lg font-semibold mb-4 text-center text-blue-900">Change Password</h2>
+                    <form id="change-password-form" class="space-y-4">
+                        <div>
+                            <label for="current-password" class="block text-sm font-medium text-gray-700">Current Password</label>
+                            <input type="password" id="current-password" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" placeholder="Enter current password">
+                        </div>
+                        <div>
+                            <label for="new-password" class="block text-sm font-medium text-gray-700">New Password</label>
+                            <input type="password" id="new-password" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" placeholder="Enter new password">
+                        </div>
+                        <div>
+                            <label for="confirm-new-password" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                            <input type="password" id="confirm-new-password" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" placeholder="Confirm new password">
+                        </div>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Change Password
+                        </button>
+                    </form>
+                </section>
+                <div id="change-password-message-box" class="message-box p-4 rounded-md text-sm mt-4"></div>
+
+                <section class="bg-white p-6 rounded-xl shadow-md mt-6">
+                    <h2 class="text-lg font-semibold mb-4 text-center text-red-700">Danger Zone</h2>
+                    <div class="space-y-4">
+                        <button id="clear-transactions-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Clear All Transactions
+                        </button>
+                        <button id="clear-expenses-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Clear All Expenses
+                        </button>
+                    </div>
+                </section>
+                <div id="reset-message-box" class="message-box p-4 rounded-md text-sm mt-4"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginSection = document.getElementById('login-section');
+            const loginForm = document.getElementById('login-form');
+            const appContent = document.getElementById('app-content');
+            const loginMessageBox = document.getElementById('login-message-box');
+            
+            const addMoneyForm = document.getElementById('add-money-form');
+            const addMoneyMessageBox = document.getElementById('add-money-message-box');
+            
+            const transactionForm = document.getElementById('transaction-form');
+            const transactionsList = document.getElementById('transactions-list');
+            const transactionMessageBox = document.getElementById('transaction-message-box');
+            
+            const expenseForm = document.getElementById('expense-form');
+            const expensesList = document.getElementById('expenses-list');
+            const expenseMessageBox = document.getElementById('expense-message-box');
+
+            const loanForm = document.getElementById('loan-form');
+            const loansList = document.getElementById('loans-list');
+            const loanMessageBox = document.getElementById('loan-message-box');
+
+            const clearTransactionsBtn = document.getElementById('clear-transactions-btn');
+            const clearExpensesBtn = document.getElementById('clear-expenses-btn');
+            const printRecordsBtn = document.getElementById('print-records-btn');
+            const resetMessageBox = document.getElementById('reset-message-box');
+            
+            const balanceContainer = document.getElementById('balance-container');
+            const totalBalanceContainer = document.getElementById('total-balance-container');
+            const changePasswordForm = document.getElementById('change-password-form');
+            const changePasswordMessageBox = document.getElementById('change-password-message-box');
+
+            let correctPassword = 'Zaman123456';
+            let transactions = [];
+            let expenses = [];
+            let loans = [];
+            
+            let balances = {
+                'Faysal Bank': 0,
+                'EasyPaisa': 0,
+                'JazzCash': 0,
+                'Cash in Hand': 0,
+                'Profit': 0
+            };
+            
+            const DATA_KEY = 'cashManagerAppData';
+
+            function saveData() {
+                const data = {
+                    password: correctPassword,
+                    transactions,
+                    expenses,
+                    loans,
+                    balances
+                };
+                localStorage.setItem(DATA_KEY, JSON.stringify(data));
+            }
+
+            function loadData() {
+                const data = localStorage.getItem(DATA_KEY);
+                if (data) {
+                    const parsedData = JSON.parse(data);
+                    
+                    // Prioritize password from local storage, otherwise use the hardcoded one
+                    if (parsedData.password) {
+                        correctPassword = parsedData.password;
+                    }
+                    
+                    transactions = parsedData.transactions || [];
+                    expenses = parsedData.expenses || [];
+                    loans = parsedData.loans || [];
+
+                    // Check if 'Profit' key exists, if not, initialize to 0
+                    if (!parsedData.balances.hasOwnProperty('Profit')) {
+                        parsedData.balances.Profit = 0;
+                    }
+                    balances = parsedData.balances;
+                }
+            }
+
+            function updateBalance(account, amount) {
+                if (balances.hasOwnProperty(account)) {
+                    balances[account] += amount;
+                }
+                renderBalances();
+                renderTotalBalance();
+                saveData();
+            }
+
+            function renderTotalBalance() {
+                const total = balances['Faysal Bank'] + balances['EasyPaisa'] + balances['JazzCash'] + balances['Cash in Hand'];
+                totalBalanceContainer.innerHTML = `
+                    <p class="text-sm font-semibold opacity-90">Total Balance</p>
+                    <p class="text-2xl font-bold">Rs. ${total.toLocaleString()}</p>
+                `;
+            }
+
+            function displayMessage(message, type, messageBoxElement) {
+                messageBoxElement.textContent = message;
+                messageBoxElement.classList.remove('message-box', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+                messageBoxElement.classList.add('show');
+                if (type === 'success') {
+                    messageBoxElement.classList.add('bg-green-100', 'text-green-700');
+                } else if (type === 'error') {
+                    messageBoxElement.classList.add('bg-red-100', 'text-red-700');
+                }
+                setTimeout(() => {
+                    messageBoxElement.classList.remove('show');
+                }, 3000);
+            }
+
+            function renderBalances() {
+                balanceContainer.innerHTML = '';
+                const accounts = Object.keys(balances);
+                accounts.forEach(account => {
+                    const balanceEl = document.createElement('div');
+                    balanceEl.className = 'balance-item';
+                    
+                    const accountNameEl = document.createElement('h3');
+                    accountNameEl.className = 'text-lg font-semibold opacity-90';
+                    accountNameEl.textContent = account;
+                    
+                    const balanceAmountEl = document.createElement('p');
+                    balanceAmountEl.className = 'balance-amount';
+                    balanceAmountEl.textContent = `Rs. ${balances[account].toLocaleString()}`;
+                    
+                    balanceAmountEl.style.color = '#fff';
+
+                    balanceEl.appendChild(accountNameEl);
+                    balanceEl.appendChild(balanceAmountEl);
+                    balanceContainer.appendChild(balanceEl);
+                });
+            }
+
+            function renderTransactions() {
+                transactionsList.innerHTML = '';
+                if (transactions.length === 0) {
+                    transactionsList.innerHTML = '<p class="text-center text-gray-500">No transactions recorded yet.</p>';
+                } else {
+                    transactions.forEach((transaction, index) => {
+                        const transactionElement = document.createElement('div');
+                        transactionElement.className = 'bg-gray-50 p-4 rounded-lg flex justify-between items-center shadow-sm';
+                        
+                        let amountColor, amountSign, transactionLabel;
+
+                        if (transaction.type === 'add-money') {
+                            amountColor = 'text-green-600';
+                            amountSign = '+';
+                            transactionLabel = `Added to ${transaction.account}`;
+                        } else if (transaction.type === 'cash-in') {
+                            amountColor = 'text-green-600';
+                            amountSign = '+';
+                            transactionLabel = `From ${transaction.account} to Cash in Hand`;
+                        } else if (transaction.type === 'cash-out') {
+                            amountColor = 'text-red-600';
+                            amountSign = '-';
+                            transactionLabel = `From Cash in Hand to ${transaction.account}`;
+                        }
+                        
+                        const profitDisplay = transaction.profit ? `<span class="text-xs text-gray-500"> (Profit: Rs. ${transaction.profit.toLocaleString()})</span>` : '';
+                        
+                        const detailsHtml = `
+                            <div>
+                                <h3 class="font-bold text-gray-900">${transactionLabel}</h3>
+                                <p class="text-sm text-gray-600">${new Date(transaction.timestamp).toLocaleString()}</p>
+                            </div>
+                            <div class="text-right flex items-center space-x-2">
+                                <span class="font-bold ${amountColor}">Rs. ${amountSign}${transaction.amount.toLocaleString()}</span>
+                                ${profitDisplay}
+                                <button class="delete-btn text-red-500 hover:text-red-700 transition" data-index="${index}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        `;
+                        transactionElement.innerHTML = detailsHtml;
+                        transactionsList.prepend(transactionElement);
+                    });
+                }
+            }
+
+            function renderExpenses() {
+                expensesList.innerHTML = '';
+                if (expenses.length === 0) {
+                    expensesList.innerHTML = '<p class="text-center text-gray-500">No expenses recorded yet.</p>';
+                } else {
+                    expenses.forEach((expense, index) => {
+                        const expenseElement = document.createElement('div');
+                        expenseElement.className = 'bg-gray-50 p-4 rounded-lg flex justify-between items-center shadow-sm';
+                        
+                        const detailsHtml = `
+                            <div>
+                                <h3 class="font-bold text-gray-900">${expense.reason}</h3>
+                                <p class="text-sm text-gray-600">From Cash in Hand</p>
+                            </div>
+                            <div class="text-right flex items-center space-x-2">
+                                <span class="font-bold text-red-600">Rs. -${expense.amount.toLocaleString()}</span>
+                                <p class="text-xs text-gray-500">${new Date(expense.timestamp).toLocaleString()}</p>
+                                <button class="delete-expense-btn text-red-500 hover:text-red-700 transition" data-index="${index}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                
+                                </button>
+                            </div>
+                        `;
+                        expenseElement.innerHTML = detailsHtml;
+                        expensesList.prepend(expenseElement);
+                    });
+                }
+            }
+
+            function renderLoans() {
+                loansList.innerHTML = '';
+                if (loans.length === 0) {
+                    loansList.innerHTML = '<p class="text-center text-gray-500">No loan records yet.</p>';
+                } else {
+                    loans.forEach((loan, index) => {
+                        const loanElement = document.createElement('div');
+                        loanElement.className = 'bg-gray-50 p-4 rounded-lg flex justify-between items-center shadow-sm';
+                        
+                        let actionLabel = loan.action === 'new-loan' ? 'New Loan' : 'Repayment';
+                        let typeLabel = loan.type === 'given' ? 'Loan Given' : 'Loan Received';
+                        let amountSign = loan.type === 'given' ? '-' : '+';
+                        let amountColor = loan.type === 'given' ? 'text-red-600' : 'text-green-600';
+                        
+                        if (loan.action === 'repay-loan') {
+                            amountSign = loan.type === 'given' ? '+' : '-';
+                            amountColor = loan.type === 'given' ? 'text-green-600' : 'text-red-600';
+                        }
+                        
+                        const detailsHtml = `
+                            <div>
+                                <h3 class="font-bold text-gray-900">${actionLabel} (${typeLabel})</h3>
+                                <p class="text-sm text-gray-600">${loan.name}</p>
+                            </div>
+                            <div class="text-right flex items-center space-x-2">
+                                <span class="font-bold ${amountColor}">Rs. ${amountSign}${loan.amount.toLocaleString()}</span>
+                                <p class="text-xs text-gray-500">${new Date(loan.timestamp).toLocaleString()}</p>
+                                <button class="delete-loan-btn text-red-500 hover:text-red-700 transition" data-index="${index}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        `;
+                        loanElement.innerHTML = detailsHtml;
+                        loansList.prepend(loanElement);
+                    });
+                }
+            }
+
+
+            // Event Listeners for Login, Transactions, Expenses, and Password Change
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const enteredPassword = document.getElementById('password-input').value;
+                
+                if (enteredPassword === correctPassword) {
+                    loginSection.classList.add('hidden');
+                    appContent.classList.remove('hidden');
+                    renderBalances();
+                    renderTotalBalance();
+                    renderTransactions();
+                    renderExpenses();
+                    renderLoans();
+                    saveData();
+                } else {
+                    displayMessage('Incorrect password. Please try again.', 'error', loginMessageBox);
+                }
+            });
+
+            changePasswordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const currentPassword = document.getElementById('current-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmNewPassword = document.getElementById('confirm-new-password').value;
+
+                if (currentPassword === '' || newPassword === '' || confirmNewPassword === '') {
+                    displayMessage('All fields are required.', 'error', changePasswordMessageBox);
+                    return;
+                }
+
+                if (currentPassword !== correctPassword) {
+                    displayMessage('Incorrect current password.', 'error', changePasswordMessageBox);
+                    return;
+                }
+
+                if (newPassword !== confirmNewPassword) {
+                    displayMessage('New passwords do not match.', 'error', changePasswordMessageBox);
+                    return;
+                }
+
+                correctPassword = newPassword;
+                saveData();
+                displayMessage('Password changed successfully!', 'success', changePasswordMessageBox);
+                changePasswordForm.reset();
+            });
+
+            addMoneyForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const account = document.getElementById('add-money-account-select').value;
+                const amount = parseInt(document.getElementById('add-money-amount-input').value);
+
+                if (!amount) {
+                    displayMessage('Please enter an amount.', 'error', addMoneyMessageBox);
+                    return;
+                }
+
+                // Add money directly to the selected account
+                updateBalance(account, amount);
+                
+                const newTransaction = {
+                    type: 'add-money',
+                    account,
+                    amount: amount,
+                    profit: 0,
+                    timestamp: new Date().toISOString()
+                };
+
+                transactions.push(newTransaction);
+                renderTransactions();
+                displayMessage('Money added successfully!', 'success', addMoneyMessageBox);
+                saveData();
+                addMoneyForm.reset();
+            });
+
+
+            transactionForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const type = document.getElementById('transaction-type-select').value;
+                const account = document.getElementById('account-select').value;
+                const amount = parseInt(document.getElementById('amount-input').value);
+
+                if (!amount) {
+                    displayMessage('Please enter an amount.', 'error', transactionMessageBox);
+                    return;
+                }
+                
+                let profitAmount = 0;
+                let accountChange = 0;
+                let cashInHandChange = 0;
+
+                // Profit applies only to these accounts
+                const profitAccounts = ['Faysal Bank', 'EasyPaisa', 'JazzCash'];
+                const isProfitAccount = profitAccounts.includes(account);
+                
+                if (type === 'cash-in') {
+                    // Money goes from the bank to Cash in Hand
+                    accountChange = -amount;
+                    cashInHandChange = amount;
+                    if (isProfitAccount) {
+                        profitAmount = amount * 0.01; // 1% profit
+                    }
+                } else if (type === 'cash-out') {
+                    // Money goes from Cash in Hand to the bank
+                    accountChange = amount;
+                    cashInHandChange = -amount;
+                    if (isProfitAccount) {
+                        profitAmount = amount * 0.02; // 2% profit
+                    }
+                }
+
+                // Update balances
+                updateBalance(account, accountChange);
+                updateBalance('Cash in Hand', cashInHandChange);
+                updateBalance('Profit', profitAmount);
+
+                const newTransaction = {
+                    type,
+                    account,
+                    amount: amount,
+                    profit: profitAmount,
+                    timestamp: new Date().toISOString()
+                };
+
+                transactions.push(newTransaction);
+                renderTransactions();
+                displayMessage('Transaction recorded successfully!', 'success', transactionMessageBox);
+                saveData();
+                transactionForm.reset();
+            });
+
+            expenseForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const amount = document.getElementById('expense-amount-input').value;
+                const reason = document.getElementById('expense-reason-input').value.trim();
+
+                if (amount === '' || reason === '') {
+                    displayMessage('Please fill out all fields.', 'error', expenseMessageBox);
+                    return;
+                }
+
+                const parsedAmount = parseInt(amount);
+                
+                // Deduct expense from Cash in Hand
+                updateBalance('Cash in Hand', -parsedAmount);
+
+                const newExpense = {
+                    amount: parsedAmount,
+                    reason,
+                    timestamp: new Date().toISOString()
+                };
+
+                expenses.push(newExpense);
+                renderExpenses();
+                displayMessage('Expense recorded successfully!', 'success', expenseMessageBox);
+                saveData();
+                expenseForm.reset();
+            });
+
+            loanForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const action = document.getElementById('loan-action-select').value;
+                const type = document.getElementById('loan-type-select').value;
+                const amount = parseInt(document.getElementById('loan-amount-input').value);
+                const name = document.getElementById('loan-name-input').value.trim();
+
+                if (amount === '' || name === '') {
+                    displayMessage('Please fill out all fields.', 'error', loanMessageBox);
+                    return;
+                }
+
+                let amountChange = 0;
+
+                // Loan is given: money leaves Cash in Hand
+                if (type === 'given' && action === 'new-loan') {
+                    amountChange = -amount;
+                // Loan is repaid (for a loan you gave): money comes into Cash in Hand
+                } else if (type === 'given' && action === 'repay-loan') {
+                    amountChange = amount;
+                // Loan is received: money comes into Cash in Hand
+                } else if (type === 'received' && action === 'new-loan') {
+                    amountChange = amount;
+                // Loan is repaid (for a loan you received): money leaves Cash in Hand
+                } else if (type === 'received' && action === 'repay-loan') {
+                    amountChange = -amount;
+                }
+
+                updateBalance('Cash in Hand', amountChange);
+
+                const newLoan = {
+                    action,
+                    type,
+                    amount,
+                    name,
+                    timestamp: new Date().toISOString()
+                };
+
+                loans.push(newLoan);
+                renderLoans();
+                displayMessage('Loan record added successfully!', 'success', loanMessageBox);
+                saveData();
+                loanForm.reset();
+            });
+
+            transactionsList.addEventListener('click', (e) => {
+                if (e.target.closest('.delete-btn')) {
+                    const btn = e.target.closest('.delete-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedTransaction = transactions[index];
+                    
+                    // Reverse the balance changes for the transaction
+                    let accountChange = 0;
+                    let cashInHandChange = 0;
+                    
+                    if (deletedTransaction.type === 'add-money') {
+                        // Reverse a simple addition
+                        updateBalance(deletedTransaction.account, -deletedTransaction.amount);
+                    } else if (deletedTransaction.type === 'cash-in') {
+                        // Reverse a transfer from bank to cash in hand
+                        accountChange = deletedTransaction.amount;
+                        cashInHandChange = -deletedTransaction.amount;
+                        updateBalance(deletedTransaction.account, accountChange);
+                        updateBalance('Cash in Hand', cashInHandChange);
+                    } else if (deletedTransaction.type === 'cash-out') {
+                        // Reverse a transfer from cash in hand to bank
+                        accountChange = -deletedTransaction.amount;
+                        cashInHandChange = deletedTransaction.amount;
+                        updateBalance(deletedTransaction.account, accountChange);
+                        updateBalance('Cash in Hand', cashInHandChange);
+                    }
+                    
+                    // Reverse the profit change for any transaction type
+                    if (deletedTransaction.profit > 0) {
+                        updateBalance('Profit', -deletedTransaction.profit);
+                    }
+                    
+                    transactions.splice(index, 1);
+                    renderTransactions();
+                    displayMessage('Transaction deleted.', 'success', transactionMessageBox);
+                    saveData();
+                }
+            });
+
+            expensesList.addEventListener('click', (e) => {
+                if (e.target.closest('.delete-expense-btn')) {
+                    const btn = e.target.closest('.delete-expense-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedExpense = expenses[index];
+                    
+                    // Reverse the expense change by adding it back to Cash in Hand
+                    updateBalance('Cash in Hand', deletedExpense.amount);
+                    
+                    expenses.splice(index, 1);
+                    renderExpenses();
+                    displayMessage('Expense deleted.', 'success', expenseMessageBox);
+                    saveData();
+                }
+            });
+
+            loansList.addEventListener('click', (e) => {
+                if (e.target.closest('.delete-loan-btn')) {
+                    const btn = e.target.closest('.delete-loan-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedLoan = loans[index];
+                    
+                    let amountChange = 0;
+                    
+                    // Reverse the loan's effect on Cash in Hand
+                    if (deletedLoan.type === 'given' && deletedLoan.action === 'new-loan') {
+                        amountChange = deletedLoan.amount;
+                    } else if (deletedLoan.type === 'given' && deletedLoan.action === 'repay-loan') {
+                        amountChange = -deletedLoan.amount;
+                    } else if (deletedLoan.type === 'received' && deletedLoan.action === 'new-loan') {
+                        amountChange = -deletedLoan.amount;
+                    } else if (deletedLoan.type === 'received' && deletedLoan.action === 'repay-loan') {
+                        amountChange = deletedLoan.amount;
+                    }
+
+                    updateBalance('Cash in Hand', amountChange);
+                    
+                    loans.splice(index, 1);
+                    renderLoans();
+                    displayMessage('Loan record deleted.', 'success', loanMessageBox);
+                    saveData();
+                }
+            });
+
+            clearTransactionsBtn.addEventListener('click', () => {
+                if (window.confirm('This will permanently delete ALL transaction records (Cash-in, Cash-out, Add Money) and reset ALL account balances and profit to zero. Are you sure?')) {
+                    transactions = [];
+                    balances = { 'Faysal Bank': 0, 'EasyPaisa': 0, 'JazzCash': 0, 'Cash in Hand': 0, 'Profit': 0 };
+                    renderBalances();
+                    renderTotalBalance();
+                    renderTransactions();
+                    saveData();
+                    displayMessage('All transaction records have been cleared.', 'success', resetMessageBox);
+                }
+            });
+
+            clearExpensesBtn.addEventListener('click', () => {
+                if (window.confirm('This will permanently delete ALL expense records. The "Cash in Hand" balance will also be reset to zero to reflect the change. Are you sure?')) {
+                    expenses = [];
+                    balances['Cash in Hand'] = 0;
+                    renderBalances();
+                    renderTotalBalance();
+                    renderExpenses();
+                    saveData();
+                    displayMessage('All expense records have been cleared.', 'success', resetMessageBox);
+                }
+            });
+
+            function printRecords() {
+                const appContent = document.getElementById('app-content');
+                const printContent = document.createElement('div');
+
+                const total = balances['Faysal Bank'] + balances['EasyPaisa'] + balances['JazzCash'] + balances['Cash in Hand'];
+
+                // Generate Balances Section
+                const balancesHtml = `
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">Current Balances</h2>
+                        <div style="background-color: #1a202c; color: #fff; padding: 1rem; border-radius: 0.5rem; text-align: center; margin-bottom: 1rem;">
+                            <p style="font-size: 1rem; opacity: 0.9;">Total Balance</p>
+                            <p style="font-size: 2rem; font-weight: bold;">Rs. ${total.toLocaleString()}</p>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; color: #fff;">
+                            ${Object.keys(balances).map(account => `
+                                <div style="background-color: #2b6cb0; padding: 1.5rem; border-radius: 0.5rem; text-align: center;">
+                                    <h3 style="font-size: 1.125rem; font-weight: 600; opacity: 0.9;">${account}</h3>
+                                    <p style="font-size: 1.5rem; font-weight: bold;">Rs. ${balances[account].toLocaleString()}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                // Generate Transactions Section
+                const transactionsHtml = `
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">All Transactions</h2>
+                        <ul style="list-style: none; padding: 0;">
+                            ${transactions.slice().reverse().map(t => `
+                                <li style="padding: 1rem; border-bottom: 1px solid #ccc;">
+                                    <strong>${t.type === 'add-money' ? `Added to ${t.account}` : t.type === 'cash-in' ? `Cash-in from ${t.account}` : `Cash-out to ${t.account}`}</strong>
+                                    <span style="float: right; font-weight: bold; color: ${t.type === 'cash-out' ? 'red' : 'green'};">Rs. ${t.type === 'cash-out' ? '-' : '+'}${t.amount.toLocaleString()}</span>
+                                    <br><small style="color: #666;">${new Date(t.timestamp).toLocaleString()}</small>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+
+                // Generate Expenses Section
+                const expensesHtml = `
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">Recent Expenses</h2>
+                        <ul style="list-style: none; padding: 0;">
+                            ${expenses.slice().reverse().map(e => `
+                                <li style="padding: 1rem; border-bottom: 1px solid #ccc;">
+                                    <strong>${e.reason}</strong>
+                                    <span style="float: right; font-weight: bold; color: red;">Rs. -${e.amount.toLocaleString()}</span>
+                                    <br><small style="color: #666;">${new Date(e.timestamp).toLocaleString()}</small>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+
+                // Generate Loans Section
+                const loansHtml = `
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">Loan Records</h2>
+                        <ul style="list-style: none; padding: 0;">
+                            ${loans.slice().reverse().map(l => {
+                                let actionLabel = l.action === 'new-loan' ? 'New Loan' : 'Repayment';
+                                let typeLabel = l.type === 'given' ? 'Given' : 'Received';
+                                let amountSign = (l.type === 'given' && l.action === 'new-loan') || (l.type === 'received' && l.action === 'repay-loan') ? '-' : '+';
+                                let amountColor = (l.type === 'given' && l.action === 'new-loan') || (l.type === 'received' && l.action === 'repay-loan') ? 'red' : 'green';
+                                
+                                return `
+                                    <li style="padding: 1rem; border-bottom: 1px solid #ccc;">
+                                        <strong>${l.name} - ${actionLabel} (${typeLabel})</strong>
+                                        <span style="float: right; font-weight: bold; color: ${amountColor};">Rs. ${amountSign}${l.amount.toLocaleString()}</span>
+                                        <br><small style="color: #666;">${new Date(l.timestamp).toLocaleString()}</small>
+                                    </li>
+                                `;
+                            }).join('')}
+                        </ul>
+                    </div>
+                `;
+
+                printContent.innerHTML = `
+                    <div style="padding: 2rem;">
+                        <h1 style="text-align: center; font-size: 2rem; font-weight: bold; margin-bottom: 2rem;">Zaman Photcopy Cash Record</h1>
+                        ${balancesHtml}
+                        ${transactionsHtml}
+                        ${expensesHtml}
+                        ${loansHtml}
+                    </div>
+                `;
+
+                const originalBody = document.body.innerHTML;
+                document.body.innerHTML = printContent.innerHTML;
+                window.print();
+                document.body.innerHTML = originalBody;
+                
+                // Re-attach event listeners after restoring the DOM
+                document.getElementById('login-form').addEventListener('submit', handleLoginForm);
+                document.getElementById('add-money-form').addEventListener('submit', handleAddMoneyForm);
+                document.getElementById('transaction-form').addEventListener('submit', handleTransactionForm);
+                document.getElementById('expense-form').addEventListener('submit', handleExpenseForm);
+                document.getElementById('loan-form').addEventListener('submit', handleLoanForm);
+                document.getElementById('change-password-form').addEventListener('submit', handleChangePasswordForm);
+                document.getElementById('clear-transactions-btn').addEventListener('click', handleClearTransactions);
+                document.getElementById('clear-expenses-btn').addEventListener('click', handleClearExpenses);
+                document.getElementById('print-records-btn').addEventListener('click', printRecords);
+                transactionsList.addEventListener('click', handleDeleteTransaction);
+                expensesList.addEventListener('click', handleDeleteExpense);
+                loansList.addEventListener('click', handleDeleteLoan);
+            }
+
+            // Centralized handlers for event listeners
+            function handleLoginForm(e) {
+                e.preventDefault();
+                const enteredPassword = document.getElementById('password-input').value;
+                
+                if (enteredPassword === correctPassword) {
+                    loginSection.classList.add('hidden');
+                    appContent.classList.remove('hidden');
+                    renderBalances();
+                    renderTotalBalance();
+                    renderTransactions();
+                    renderExpenses();
+                    renderLoans();
+                    saveData();
+                } else {
+                    displayMessage('Incorrect password. Please try again.', 'error', loginMessageBox);
+                }
+            }
+            function handleAddMoneyForm(e) {
+                e.preventDefault();
+                const account = document.getElementById('add-money-account-select').value;
+                const amount = parseInt(document.getElementById('add-money-amount-input').value);
+                if (!amount) {
+                    displayMessage('Please enter an amount.', 'error', addMoneyMessageBox);
+                    return;
+                }
+                updateBalance(account, amount);
+                const newTransaction = { type: 'add-money', account, amount: amount, profit: 0, timestamp: new Date().toISOString() };
+                transactions.push(newTransaction);
+                renderTransactions();
+                displayMessage('Money added successfully!', 'success', addMoneyMessageBox);
+                saveData();
+                addMoneyForm.reset();
+            }
+            function handleTransactionForm(e) {
+                e.preventDefault();
+                const type = document.getElementById('transaction-type-select').value;
+                const account = document.getElementById('account-select').value;
+                const amount = parseInt(document.getElementById('amount-input').value);
+                if (!amount) {
+                    displayMessage('Please enter an amount.', 'error', transactionMessageBox);
+                    return;
+                }
+                let profitAmount = 0;
+                let accountChange = 0;
+                let cashInHandChange = 0;
+                const profitAccounts = ['Faysal Bank', 'EasyPaisa', 'JazzCash'];
+                const isProfitAccount = profitAccounts.includes(account);
+                if (type === 'cash-in') {
+                    accountChange = -amount;
+                    cashInHandChange = amount;
+                    if (isProfitAccount) { profitAmount = amount * 0.01; }
+                } else if (type === 'cash-out') {
+                    accountChange = amount;
+                    cashInHandChange = -amount;
+                    if (isProfitAccount) { profitAmount = amount * 0.02; }
+                }
+                updateBalance(account, accountChange);
+                updateBalance('Cash in Hand', cashInHandChange);
+                updateBalance('Profit', profitAmount);
+                const newTransaction = { type, account, amount: amount, profit: profitAmount, timestamp: new Date().toISOString() };
+                transactions.push(newTransaction);
+                renderTransactions();
+                displayMessage('Transaction recorded successfully!', 'success', transactionMessageBox);
+                saveData();
+                transactionForm.reset();
+            }
+            function handleExpenseForm(e) {
+                e.preventDefault();
+                const amount = document.getElementById('expense-amount-input').value;
+                const reason = document.getElementById('expense-reason-input').value.trim();
+                if (amount === '' || reason === '') {
+                    displayMessage('Please fill out all fields.', 'error', expenseMessageBox);
+                    return;
+                }
+                const parsedAmount = parseInt(amount);
+                updateBalance('Cash in Hand', -parsedAmount);
+                const newExpense = { amount: parsedAmount, reason, timestamp: new Date().toISOString() };
+                expenses.push(newExpense);
+                renderExpenses();
+                displayMessage('Expense recorded successfully!', 'success', expenseMessageBox);
+                saveData();
+                expenseForm.reset();
+            }
+            function handleLoanForm(e) {
+                e.preventDefault();
+                const action = document.getElementById('loan-action-select').value;
+                const type = document.getElementById('loan-type-select').value;
+                const amount = parseInt(document.getElementById('loan-amount-input').value);
+                const name = document.getElementById('loan-name-input').value.trim();
+                if (amount === '' || name === '') {
+                    displayMessage('Please fill out all fields.', 'error', loanMessageBox);
+                    return;
+                }
+                let amountChange = 0;
+                if (type === 'given' && action === 'new-loan') { amountChange = -amount; }
+                else if (type === 'given' && action === 'repay-loan') { amountChange = amount; }
+                else if (type === 'received' && action === 'new-loan') { amountChange = amount; }
+                else if (type === 'received' && action === 'repay-loan') { amountChange = -amount; }
+                updateBalance('Cash in Hand', amountChange);
+                const newLoan = { action, type, amount, name, timestamp: new Date().toISOString() };
+                loans.push(newLoan);
+                renderLoans();
+                displayMessage('Loan record added successfully!', 'success', loanMessageBox);
+                saveData();
+                loanForm.reset();
+            }
+            function handleChangePasswordForm(e) {
+                e.preventDefault();
+                const currentPassword = document.getElementById('current-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmNewPassword = document.getElementById('confirm-new-password').value;
+                if (currentPassword === '' || newPassword === '' || confirmNewPassword === '') {
+                    displayMessage('All fields are required.', 'error', changePasswordMessageBox);
+                    return;
+                }
+                if (currentPassword !== correctPassword) {
+                    displayMessage('Incorrect current password.', 'error', changePasswordMessageBox);
+                    return;
+                }
+                if (newPassword !== confirmNewPassword) {
+                    displayMessage('New passwords do not match.', 'error', changePasswordMessageBox);
+                    return;
+                }
+                correctPassword = newPassword;
+                saveData();
+                displayMessage('Password changed successfully!', 'success', changePasswordMessageBox);
+                changePasswordForm.reset();
+            }
+            function handleClearTransactions() {
+                if (window.confirm('This will permanently delete ALL transaction records (Cash-in, Cash-out, Add Money) and reset ALL account balances and profit to zero. Are you sure?')) {
+                    transactions = [];
+                    balances = { 'Faysal Bank': 0, 'EasyPaisa': 0, 'JazzCash': 0, 'Cash in Hand': 0, 'Profit': 0 };
+                    renderBalances();
+                    renderTotalBalance();
+                    renderTransactions();
+                    saveData();
+                    displayMessage('All transaction records have been cleared.', 'success', resetMessageBox);
+                }
+            }
+            function handleClearExpenses() {
+                if (window.confirm('This will permanently delete ALL expense records. The "Cash in Hand" balance will also be reset to zero to reflect the change. Are you sure?')) {
+                    expenses = [];
+                    balances['Cash in Hand'] = 0;
+                    renderBalances();
+                    renderTotalBalance();
+                    renderExpenses();
+                    saveData();
+                    displayMessage('All expense records have been cleared.', 'success', resetMessageBox);
+                }
+            }
+            function handleDeleteTransaction(e) {
+                if (e.target.closest('.delete-btn')) {
+                    const btn = e.target.closest('.delete-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedTransaction = transactions[index];
+                    let accountChange = 0;
+                    let cashInHandChange = 0;
+                    if (deletedTransaction.type === 'add-money') { updateBalance(deletedTransaction.account, -deletedTransaction.amount); }
+                    else if (deletedTransaction.type === 'cash-in') { accountChange = deletedTransaction.amount; cashInHandChange = -deletedTransaction.amount; updateBalance(deletedTransaction.account, accountChange); updateBalance('Cash in Hand', cashInHandChange); }
+                    else if (deletedTransaction.type === 'cash-out') { accountChange = -deletedTransaction.amount; cashInHandChange = deletedTransaction.amount; updateBalance(deletedTransaction.account, accountChange); updateBalance('Cash in Hand', cashInHandChange); }
+                    if (deletedTransaction.profit > 0) { updateBalance('Profit', -deletedTransaction.profit); }
+                    transactions.splice(index, 1);
+                    renderTransactions();
+                    displayMessage('Transaction deleted.', 'success', transactionMessageBox);
+                    saveData();
+                }
+            }
+            function handleDeleteExpense(e) {
+                if (e.target.closest('.delete-expense-btn')) {
+                    const btn = e.target.closest('.delete-expense-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedExpense = expenses[index];
+                    updateBalance('Cash in Hand', deletedExpense.amount);
+                    expenses.splice(index, 1);
+                    renderExpenses();
+                    displayMessage('Expense deleted.', 'success', expenseMessageBox);
+                    saveData();
+                }
+            }
+            function handleDeleteLoan(e) {
+                if (e.target.closest('.delete-loan-btn')) {
+                    const btn = e.target.closest('.delete-loan-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const deletedLoan = loans[index];
+                    let amountChange = 0;
+                    if (deletedLoan.type === 'given' && deletedLoan.action === 'new-loan') { amountChange = deletedLoan.amount; }
+                    else if (deletedLoan.type === 'given' && deletedLoan.action === 'repay-loan') { amountChange = -deletedLoan.amount; }
+                    else if (deletedLoan.type === 'received' && deletedLoan.action === 'new-loan') { amountChange = -deletedLoan.amount; }
+                    else if (deletedLoan.type === 'received' && deletedLoan.action === 'repay-loan') { amountChange = deletedLoan.amount; }
+                    updateBalance('Cash in Hand', amountChange);
+                    loans.splice(index, 1);
+                    renderLoans();
+                    displayMessage('Loan record deleted.', 'success', loanMessageBox);
+                    saveData();
+                }
+            }
+            
+            // Initial and persistent event listeners
+            document.getElementById('print-records-btn').addEventListener('click', printRecords);
+            document.getElementById('login-form').addEventListener('submit', (e) => handleLoginForm(e));
+            document.getElementById('add-money-form').addEventListener('submit', (e) => handleAddMoneyForm(e));
+            document.getElementById('transaction-form').addEventListener('submit', (e) => handleTransactionForm(e));
+            document.getElementById('expense-form').addEventListener('submit', (e) => handleExpenseForm(e));
+            document.getElementById('loan-form').addEventListener('submit', (e) => handleLoanForm(e));
+            document.getElementById('change-password-form').addEventListener('submit', (e) => handleChangePasswordForm(e));
+            document.getElementById('clear-transactions-btn').addEventListener('click', handleClearTransactions);
+            document.getElementById('clear-expenses-btn').addEventListener('click', handleClearExpenses);
+            transactionsList.addEventListener('click', handleDeleteTransaction);
+            expensesList.addEventListener('click', handleDeleteExpense);
+            loansList.addEventListener('click', handleDeleteLoan);
+            
+            loadData();
+            if (localStorage.getItem(DATA_KEY)) {
+                loginSection.classList.add('hidden');
+                appContent.classList.remove('hidden');
+                renderBalances();
+                renderTotalBalance();
+                renderTransactions();
+                renderExpenses();
+                renderLoans();
+            }
+        });
+    </script>
+</body>
+</html>
